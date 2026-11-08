@@ -6,8 +6,9 @@ import '../theme.dart';
 /// BIỂU ĐỒ GIÁ nhiều ngày — tự vẽ bằng CustomPainter (không cần thư viện
 /// ngoài). Trả lời câu hỏi thật sự của bà con: "nên bán bây giờ hay đợi?"
 ///
-/// Dữ liệu lấy từ lịch sử lưu trong máy (app ghi lại mỗi lần tải giá),
-/// nên càng dùng lâu biểu đồ càng đầy đặn.
+/// Dữ liệu lấy từ lịch sử lưu trong máy (app ghi lại mỗi lần tải giá), cộng
+/// với lịch sử dài ngày tải từ máy chủ giá HeFarmer — nên vừa cài app đã có
+/// biểu đồ nhiều tháng.
 
 Future<void> showPriceChart(
   BuildContext context, {
@@ -15,9 +16,6 @@ Future<void> showPriceChart(
   required String commodityName,
   required String unit,
 }) async {
-  final history = await loadPriceHistory(commodityId);
-  if (!context.mounted) return;
-
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -33,8 +31,12 @@ Future<void> showPriceChart(
       contentPadding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
       content: SizedBox(
         width: 360,
-        child: PriceChartBody(
-            history: history, unit: unit, commodityName: commodityName),
+        child: SingleChildScrollView(
+          child: _ChartLoader(
+              commodityId: commodityId,
+              unit: unit,
+              commodityName: commodityName),
+        ),
       ),
       actions: [
         TextButton(
@@ -44,6 +46,90 @@ Future<void> showPriceChart(
       ],
     ),
   );
+}
+
+/// Các khoảng thời gian cho bác chọn xem
+const _ranges = <(String, int)>[
+  ('30 ngày', 30),
+  ('6 tháng', 183),
+  ('1 năm', 366),
+  ('3 năm', 1100),
+];
+
+/// Hiện ngay lịch sử trong máy, đồng thời tải thêm lịch sử dài từ máy chủ
+class _ChartLoader extends StatefulWidget {
+  final String commodityId;
+  final String unit;
+  final String commodityName;
+  const _ChartLoader({
+    required this.commodityId,
+    required this.unit,
+    required this.commodityName,
+  });
+
+  @override
+  State<_ChartLoader> createState() => _ChartLoaderState();
+}
+
+class _ChartLoaderState extends State<_ChartLoader> {
+  int _days = 30;
+  List<DaySummary>? _history;
+  bool _syncing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+    syncServerHistory(widget.commodityId).then((changed) async {
+      if (!mounted) return;
+      if (changed) await _reload();
+      if (mounted) setState(() => _syncing = false);
+    });
+  }
+
+  Future<void> _reload() async {
+    final h = await loadPriceHistory(widget.commodityId, days: _days);
+    if (mounted) setState(() => _history = h);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = _history;
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        children: [
+          for (final (label, days) in _ranges)
+            ChoiceChip(
+              label: Text(label, style: const TextStyle(fontSize: AppFont.small)),
+              selected: _days == days,
+              onSelected: (_) {
+                setState(() => _days = days);
+                _reload();
+              },
+            ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      if (h == null)
+        const Padding(
+          padding: EdgeInsets.all(24),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        )
+      else
+        PriceChartBody(
+            history: h, unit: widget.unit, commodityName: widget.commodityName),
+      if (_syncing)
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text('Đang tải thêm lịch sử giá...',
+              style: TextStyle(
+                  fontSize: AppFont.small, color: AppColors.textMuted)),
+        ),
+    ]);
+  }
 }
 
 class PriceChartBody extends StatelessWidget {
@@ -200,8 +286,8 @@ class _ChartPainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // Chấm tròn tại từng ngày
-    for (var i = 0; i < points.length; i++) {
+    // Chấm tròn tại từng ngày (nhiều ngày quá thì bỏ chấm cho đỡ rối)
+    for (var i = 0; i < points.length && points.length <= 45; i++) {
       canvas.drawCircle(pos(i), 4.5, Paint()..color = Colors.white);
       canvas.drawCircle(
           pos(i),
@@ -213,12 +299,19 @@ class _ChartPainter extends CustomPainter {
     }
 
     // Nhãn ngày: chỉ ghi ngày đầu, giữa, cuối cho đỡ rối
+    final longRange = DateTime.parse(points.last.date)
+            .difference(DateTime.parse(points.first.date))
+            .inDays >
+        330;
     final idxs = points.length <= 3
         ? List.generate(points.length, (i) => i)
         : [0, points.length ~/ 2, points.length - 1];
     for (final i in idxs) {
       final p = points[i].date.split('-');
-      final label = '${p[2]}/${p[1]}';
+      // Xem dài hơn 1 năm thì ghi tháng/năm cho dễ hiểu
+      final label = longRange
+          ? '${p[1]}/${p[0].substring(2)}'
+          : '${p[2]}/${p[1]}';
       final tp = TextPainter(
         text: TextSpan(
             text: label,

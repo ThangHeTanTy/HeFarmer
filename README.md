@@ -36,17 +36,22 @@ Quan trọng nhất là mục **"Hôm nay nên làm gì?"** — dịch số li�
 > 🌬️ *Hoãn phun thuốc — gió 30 km/h làm thuốc bay mất, vừa phí vừa hại sức khoẻ.*
 > 📅 *Sắp có 3 ngày ráo liên tiếp — thuận lợi thu hoạch, nên sắp xếp nhân công trước.*
 
-### 👤 Tài khoản
-Đăng ký / đăng nhập lưu ngay trong máy (mật khẩu băm SHA-256), đổi ảnh đại diện,
-và đặt **"Vị trí của tôi"** với gợi ý 34 tỉnh/thành sau sáp nhập 7/2025 — tab
-Thời tiết sẽ ưu tiên vị trí này nên bà con **không cần biết cách bật GPS**.
+### 👤 Hồ sơ (không cần mật khẩu)
+Đặt tên để app chào, đổi ảnh đại diện, và đặt **"Vị trí của tôi"** với gợi ý
+34 tỉnh/thành sau sáp nhập 7/2025:
+- tab Thời tiết ưu tiên vị trí này nên bà con **không cần biết cách bật GPS**;
+- tab Giá hiện trước **📍 giá ở vùng gần nhà nhất** (ví dụ ở Buôn Ma Thuột thì
+  thấy ngay giá cà phê Đắk Lắk), không chỉ con số trung bình cả nước.
+
+Bản cũ có đăng ký/đăng nhập: lần mở đầu tiên app tự chuyển tên, ảnh và vị trí
+sang hồ sơ mới rồi **xoá hẳn mật khẩu băm** khỏi máy.
 
 ### Tiện ích dùng chung ở mọi thẻ giá
 | | |
 |---|---|
 | 🧮 **Tính tiền** | Nhập số kg → ra thành tiền chữ to, kèm đọc chữ *"khoảng 113 triệu 760 nghìn đồng"* |
-| 📈 **Biểu đồ** | Xu hướng giá nhiều ngày, kèm tóm tắt *"▼ Giảm 2.500 (2,6%) trong 12 ngày qua"* |
-| 🔔 **Báo giá** | Đặt mức mong muốn, app báo ra màn hình điện thoại khi giá chạm mức |
+| 📈 **Biểu đồ** | Xu hướng giá 30 ngày / 6 tháng / 1 năm / 3 năm, kèm tóm tắt *"▼ Giảm 2.500 (2,6%) trong 12 ngày qua"* |
+| 🔔 **Báo giá** | Đặt mức mong muốn, app **tự kiểm tra chạy nền** (~3 giờ/lần, khi có mạng) và báo ra màn hình điện thoại khi giá **hôm nay** chạm mức — không báo theo giá cũ |
 | 🔊 **Đọc to** | Đọc giá bằng tiếng Việt đúng cách nói dân gian (hai mươi **mốt**, chín mươi **tư**, mười **lăm**) |
 | ▼ **Thu gọn** | Chạm tiêu đề để gấp thẻ không cần xem; app nhớ trạng thái cho lần sau |
 
@@ -54,10 +59,40 @@ Thời tiết sẽ ưu tiên vị trí này nên bà con **không cần biết c
 
 ## Nguồn dữ liệu
 
-Việt Nam chưa có API công khai miễn phí cho phần lớn mặt hàng nông sản, nên app
-đọc từ các trang giá uy tín cập nhật hằng ngày, với **cơ chế dự phòng xếp tầng**
-(khoảng 80 nguồn): nguồn 1 lỗi thì tự chuyển nguồn 2, 3… Nếu mọi nguồn đều
-không có dữ liệu, app hiển thị số gần nhất đã lưu kèm thông báo rõ ràng.
+Việt Nam chưa có API công khai miễn phí cho phần lớn mặt hàng nông sản, nên giá
+được đọc từ các trang giá uy tín cập nhật hằng ngày, với **cơ chế dự phòng xếp
+tầng** (khoảng 80 nguồn): nguồn 1 lỗi thì tự chuyển nguồn 2, 3…
+
+### Máy chủ giá (miễn phí, chạy trên GitHub Actions)
+
+```
+GitHub Actions (30 phút/lần, 6h–20h)          Điện thoại
+  tool/build_prices.dart                        app HeFarmer
+  đọc ~80 trang nguồn MỘT LẦN  ──► nhánh `data` ──► tải 1 file JSON gọn
+                                   latest.json      (nhanh, đỡ tốn 3G)
+                                   history/*.json   (biểu đồ nhiều năm)
+                                   health.json      (nguồn nào đang hỏng)
+```
+
+Thứ tự app lấy giá cho mỗi mặt hàng:
+1. **Máy chủ có giá hôm nay** → dùng luôn.
+2. Máy chủ chưa có / không vào được → **app tự đọc trang nguồn** như trước.
+3. Cả hai đều lỗi → hiện giá gần nhất và **ghi rõ "Đây là giá ngày dd/mm"**.
+
+Lợi ích: trang nguồn đổi giao diện thì chỉ cần sửa bộ bóc tách và đẩy code lên
+`main` — lần chạy sau máy chủ đã dùng mã mới, **không cần bà con cập nhật app**.
+Xem tình trạng từng nguồn ở tab **Actions → "Cập nhật giá"** (bảng tóm tắt mỗi
+lần chạy) hoặc file `health.json` trên nhánh `data`.
+
+Cài đặt (một lần):
+- Workflow `.github/workflows/prices.yml` chỉ chạy theo lịch khi đã nằm trên
+  nhánh `main`. Chạy lần đầu: tab **Actions → Cập nhật giá → Run workflow**.
+- GitHub tự tắt lịch chạy nếu kho mã không có hoạt động 60 ngày — vào tab
+  Actions bấm bật lại.
+- Muốn dùng máy chủ khác: build với
+  `--dart-define=PRICE_DATA_URL=https://địa-chỉ-của-bạn`.
+
+### Các nguồn
 
 - **Thời tiết:** [Open-Meteo](https://open-meteo.com) (miễn phí, không cần khoá) + bản đồ [Windy](https://windy.com)
 - **Vàng:** API JSON vang.today, XML chính thức sjc.com.vn, PNJ, Phú Quý, Bảo Tín Minh Châu
@@ -80,7 +115,7 @@ flutter test
 flutter run
 ```
 
-Yêu cầu: Flutter SDK 3.3+ và Android SDK (kèm **Android SDK Command-line Tools**).
+Yêu cầu: Flutter SDK 3.38+ (đã thử với 3.47) và Android SDK (kèm **Android SDK Command-line Tools**).
 Trên Windows, nếu PowerShell chặn script thì dùng CMD hoặc chạy một lần
 `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`.
 
@@ -117,20 +152,30 @@ lib/
 ├── screens/
 │   ├── price_screen.dart         # màn hình giá (dùng chung 4 tab giá)
 │   ├── weather_screen.dart       # thời tiết + gợi ý việc nhà nông + bản đồ
-│   ├── account_screen.dart       # đăng nhập, avatar, chọn vị trí có gợi ý
+│   ├── account_screen.dart       # hồ sơ: tên, avatar, chọn vị trí có gợi ý
 │   └── alert_screen.dart         # hộp thoại báo giá & máy tính tiền bán
 ├── widgets/
 │   └── price_chart.dart          # biểu đồ giá tự vẽ (không dùng thư viện ngoài)
 └── services/
     ├── price_parser.dart         # bóc tách giá từ HTML/JSON/XML (thuần Dart, có test)
-    ├── price_service.dart        # nguồn dữ liệu, dự phòng, lịch sử, tải sẵn ngầm
+    ├── price_catalog.dart        # danh mục mặt hàng & ~80 nguồn (thuần Dart)
+    ├── price_fetcher.dart        # tải & thử nguồn dự phòng (thuần Dart, dùng chung với máy chủ)
+    ├── price_server.dart         # định dạng JSON của máy chủ giá
+    ├── price_service.dart        # máy chủ -> tự tải -> giá cũ; tải sẵn ngầm
+    ├── history_store.dart        # lịch sử giá trong SQLite
+    ├── local_price.dart          # chọn vùng giá gần "Vị trí của tôi" nhất
     ├── weather_service.dart      # vị trí thiết bị + Open-Meteo
     ├── farm_advice.dart          # dịch thời tiết thành lời khuyên công việc
-    ├── alert_service.dart        # cảnh báo giá & thông báo
+    ├── alert_service.dart        # cảnh báo giá, thông báo, chạy nền (WorkManager)
     ├── speech_service.dart       # đọc tiếng Việt + đọc số đúng cách nói dân gian
-    ├── account_service.dart      # tài khoản lưu trong máy
+    ├── account_service.dart      # hồ sơ lưu trong máy (không mật khẩu)
     └── vn_places.dart            # 34 tỉnh/thành + tìm địa danh có gợi ý
-test/                             # ~60 test cho bộ bóc tách giá, gợi ý, đọc số
+test/                             # ~90 test: bóc tách giá, cảnh báo, SQLite, máy chủ, giá gần nhà…
+tool/
+└── build_prices.dart             # công cụ tổng hợp giá chạy trên GitHub Actions
+.github/workflows/
+├── prices.yml                    # máy chủ giá: 30 phút/lần -> nhánh `data`
+└── ci.yml                        # analyze + test + build APK
 ```
 
 ## Ghi chú kỹ thuật
@@ -138,9 +183,18 @@ test/                             # ~60 test cho bộ bóc tách giá, gợi ý,
 - **Độ mượt:** tab đầu tải xong sẽ âm thầm tải sẵn các tab còn lại; các tab đã mở
   được giữ sống trong `IndexedStack` nên quay lại là hiện ngay, đúng vị trí đang
   cuộn; chỉ tải lại khi dữ liệu đã quá 10 phút (kéo xuống để làm mới ngay).
-- **Riêng tư:** mọi dữ liệu cá nhân (tài khoản, vị trí, lịch sử giá, cảnh báo)
-  chỉ nằm trong máy người dùng. App không có máy chủ, không SDK quảng cáo,
-  không theo dõi, và chỉ xin 3 quyền: Internet, Vị trí, Thông báo.
+- **Lịch sử giá:** lưu trong SQLite (`hefarmer.db`), giữ ~3 năm mỗi mặt hàng.
+  Lịch sử cũ trong SharedPreferences được chuyển sang tự động ở lần mở đầu.
+- **Chạy nền:** Android WorkManager kiểm tra cảnh báo giá ~3 giờ/lần khi có mạng.
+  Một số máy (Xiaomi, Oppo, Vivo…) tiết kiệm pin rất mạnh có thể làm chậm việc
+  này; nếu bà con thấy báo trễ, vào Cài đặt → Pin → cho HeFarmer "Không hạn chế".
+- **Riêng tư:** mọi dữ liệu cá nhân (hồ sơ, vị trí, lịch sử giá, cảnh báo) chỉ
+  nằm trong máy người dùng. Máy chủ giá chỉ là các file JSON công khai — app
+  chỉ **tải về**, không gửi gì lên. Không SDK quảng cáo, không theo dõi. Quyền
+  xin: Internet, Vị trí, Thông báo (và tự chạy lại sau khi khởi động máy để
+  giữ lịch kiểm tra giá).
+- **CI:** `.github/workflows/ci.yml` chạy `flutter analyze`, `flutter test` và
+  build APK thử cho mỗi lần đẩy code.
 
 ## Ghi công
 

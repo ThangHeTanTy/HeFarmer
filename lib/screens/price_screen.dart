@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'alert_screen.dart';
+import '../services/account_service.dart';
+import '../services/local_price.dart';
 import '../services/speech_service.dart';
 import '../widgets/price_chart.dart';
 import '../services/price_parser.dart';
@@ -37,6 +39,7 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   List<CommodityResult>? _data;
+  HomeLocation? _home; // "Vị trí của tôi" -> hiện giá vùng gần nhà trước
   bool _loading = false;
   DateTime? _loadedAt;
   static const _conMoi = Duration(minutes: 10);
@@ -73,8 +76,14 @@ class _PriceScreenState extends State<PriceScreen> {
     await prefs.setStringList('collapsed_cards', _collapsed.toList());
   }
 
+  Future<void> _loadHome() async {
+    final h = await getHomeLocation();
+    if (mounted) setState(() => _home = h);
+  }
+
   Future<void> _load() async {
     setState(() => _loading = true);
+    _loadHome(); // bác có thể vừa đổi vị trí ở tab Hồ sơ
     // 1) Hiện NGAY dữ liệu của lần tải trước (nếu có) cho mượt,
     //    trong lúc chờ dữ liệu mới về phía sau.
     if (_data == null) {
@@ -122,6 +131,21 @@ class _PriceScreenState extends State<PriceScreen> {
             style: TextStyle(
                 fontSize: AppFont.small, color: AppColors.textMuted, height: 1.4),
           ),
+          if (_home == null &&
+              (widget.cacheKey == 'crop' || widget.cacheKey == 'livestock'))
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                  color: AppColors.buyBg,
+                  borderRadius: BorderRadius.circular(10)),
+              child: const Text(
+                '📍 Mẹo: vào tab "Tôi" đặt Vị trí của tôi — app sẽ hiện '
+                'trước giá ở vùng gần nhà bác nhất.',
+                style: TextStyle(
+                    fontSize: AppFont.small, color: AppColors.buy, height: 1.4),
+              ),
+            ),
           const SizedBox(height: 12),
           if (_loading && _data != null)
             Container(
@@ -156,6 +180,7 @@ class _PriceScreenState extends State<PriceScreen> {
           if (_data != null)
             ..._data!.map((r) => _CommodityCard(
                   result: r,
+                  home: _home,
                   collapsed: _collapsed.contains(r.commodity.id),
                   onToggle: () => _toggleCollapsed(r.commodity.id),
                 )),
@@ -181,17 +206,38 @@ class _PriceScreenState extends State<PriceScreen> {
 
 class _CommodityCard extends StatelessWidget {
   final CommodityResult result;
+  final HomeLocation? home;
   final bool collapsed;
   final VoidCallback onToggle;
   const _CommodityCard({
     required this.result,
+    required this.home,
     required this.collapsed,
     required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    final today = result.days.isNotEmpty ? result.days.last : null;
+    final today = result.latestDay;
+    // Giá này không phải của hôm nay (nguồn chưa cập nhật / mất mạng)
+    final isOld = today != null && today.date != todayKey();
+
+    // ---- Vùng giá gần nhà ----
+    final h = home;
+    final local =
+        h == null ? null : nearestRegion(result.rows, h.latitude, h.longitude);
+    final localRows =
+        local == null ? const <PriceRow>[] : rowsOfRegion(result.rows, local.region);
+    final localMain = localRows.isEmpty
+        ? null
+        : localRows.firstWhere((r) => r.unit == null || r.unit == result.commodity.unit,
+            orElse: () => localRows.first);
+    // Giá dùng để đọc to / tính tiền: ưu tiên giá vùng gần nhà (cùng đơn vị)
+    final usableLocal = localMain != null &&
+            (localMain.unit == null || localMain.unit == result.commodity.unit)
+        ? localMain
+        : null;
+    final mainPrice = usableLocal?.buy ?? today?.avgBuy;
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(16),
@@ -218,10 +264,10 @@ class _CommodityCard extends StatelessWidget {
                         color: AppColors.text)),
               ),
               // Khi thu gọn vẫn hiện nhanh giá hôm nay
-              if (collapsed && today != null && today.avgBuy != null)
+              if (collapsed && mainPrice != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
-                  child: Text(formatVnd(today.avgBuy),
+                  child: Text(formatVnd(mainPrice),
                       style: const TextStyle(
                           fontSize: AppFont.body,
                           fontWeight: FontWeight.w800,
@@ -232,13 +278,23 @@ class _CommodityCard extends StatelessWidget {
                 IconButton(
                   tooltip: 'Đọc to giá',
                   icon: const Text('🔊', style: TextStyle(fontSize: 26)),
-                  onPressed: () => speak(buildPriceSentence(
-                    name: result.commodity.name,
-                    buy: today.avgBuy,
-                    sell: today.avgSell,
-                    unit: result.commodity.unit,
-                    change: result.rows.isEmpty ? null : result.rows.first.change,
-                  )),
+                  onPressed: () => speak(usableLocal != null
+                      ? buildPriceSentence(
+                          name: '${result.commodity.name} ở ${local!.region}',
+                          buy: usableLocal.buy,
+                          sell: usableLocal.sell,
+                          unit: result.commodity.unit,
+                          change: usableLocal.change,
+                        )
+                      : buildPriceSentence(
+                          name: result.commodity.name,
+                          buy: today.avgBuy,
+                          sell: today.avgSell,
+                          unit: result.commodity.unit,
+                          change: result.rows.isEmpty
+                              ? null
+                              : result.rows.first.change,
+                        )),
                 ),
               Icon(collapsed ? Icons.expand_more : Icons.expand_less,
                   size: 32, color: AppColors.textMuted),
@@ -266,6 +322,15 @@ class _CommodityCard extends StatelessWidget {
                       color: AppColors.down,
                       height: 1.4)),
             ),
+          if (result.error == null && isOld)
+            _OldPriceNote(day: today.date),
+          if (local != null && localMain != null)
+            _LocalPriceBox(
+              region: local.region,
+              km: local.km,
+              row: localMain,
+              commodityUnit: result.commodity.unit,
+            ),
           if (today != null && today.avgBuy != null)
             Row(children: [
               Expanded(
@@ -286,7 +351,7 @@ class _CommodityCard extends StatelessWidget {
             ]),
           if (result.rows.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _RegionTable(rows: result.rows),
+            _RegionTable(rows: result.rows, localRegion: local?.region),
           ],
           if (result.days.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -300,8 +365,10 @@ class _CommodityCard extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => showSellCalculator(
                     context,
-                    commodityName: result.commodity.name,
-                    price: today.avgBuy!,
+                    commodityName: usableLocal != null
+                        ? '${result.commodity.name} (${local!.region})'
+                        : result.commodity.name,
+                    price: mainPrice ?? today.avgBuy!,
                     unit: result.commodity.unit,
                   ),
                   style: OutlinedButton.styleFrom(
@@ -364,7 +431,8 @@ class _CommodityCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               'Nguồn: ${result.sourceName} · cập nhật '
-              '${result.fetchedAt.hour.toString().padLeft(2, '0')}:${result.fetchedAt.minute.toString().padLeft(2, '0')}',
+              '${result.fetchedAt.hour.toString().padLeft(2, '0')}:${result.fetchedAt.minute.toString().padLeft(2, '0')}'
+              '${todayKey(result.fetchedAt) == todayKey() ? '' : ' ngày ${formatDateVn(todayKey(result.fetchedAt))}'}',
               style: const TextStyle(
                   fontSize: AppFont.small, color: AppColors.textMuted),
             ),
@@ -416,24 +484,29 @@ class _PriceBox extends StatelessWidget {
 
 class _RegionTable extends StatelessWidget {
   final List<PriceRow> rows;
-  const _RegionTable({required this.rows});
+  final String? localRegion; // vùng gần nhà: đưa lên đầu và tô nền
+  const _RegionTable({required this.rows, this.localRegion});
 
   @override
   Widget build(BuildContext context) {
+    bool isLocal(PriceRow r) =>
+        localRegion != null && baseRegion(r.region) == localRegion;
+    final sorted = [...rows.where(isLocal), ...rows.where((r) => !isLocal(r))];
     return Column(children: [
       const _TableHeader(first: 'Khu vực', second: 'Giá mua', third: 'Giá bán'),
-      ...rows.map((r) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: const BoxDecoration(
-                border:
-                    Border(bottom: BorderSide(color: AppColors.border))),
+      ...sorted.map((r) => Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+            decoration: BoxDecoration(
+                color: isLocal(r) ? AppColors.buyBg : null,
+                border: const Border(
+                    bottom: BorderSide(color: AppColors.border))),
             child: Row(children: [
               Expanded(
                 flex: 20,
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(r.region,
+                      Text(isLocal(r) ? '📍 ${r.region}' : r.region,
                           style: const TextStyle(
                               fontSize: AppFont.body,
                               fontWeight: FontWeight.w600,
@@ -512,7 +585,7 @@ class _ThreeDayTable extends StatelessWidget {
       const _TableHeader(first: 'Ngày', second: 'Giá mua TB', third: 'Giá bán TB'),
       ...List.generate(days.length, (i) {
         final d = days[i];
-        final isToday = i == days.length - 1;
+        final isToday = d.date == todayKey();
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           decoration: BoxDecoration(
@@ -546,7 +619,7 @@ class _ThreeDayTable extends StatelessWidget {
         );
       }),
       const SizedBox(height: 6),
-      Text('Đơn vị: $unit. Dòng dưới cùng là hôm nay.',
+      Text('Đơn vị: $unit. Dòng dưới cùng là ngày mới nhất.',
           style: const TextStyle(
               fontSize: AppFont.small, color: AppColors.textMuted)),
     ]);
@@ -587,6 +660,83 @@ class _TableHeader extends StatelessWidget {
                     fontSize: AppFont.small,
                     fontWeight: FontWeight.w900,
                     color: AppColors.sell))),
+      ]),
+    );
+  }
+}
+
+/// Ghi chú khi giá đang hiển thị KHÔNG phải của hôm nay
+class _OldPriceNote extends StatelessWidget {
+  final String day;
+  const _OldPriceNote({required this.day});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+          color: AppColors.sellBg, borderRadius: BorderRadius.circular(8)),
+      child: Text(
+        '⏰ Đây là giá ngày ${formatDateVn(day)} — hôm nay chưa có giá mới. '
+        'Kéo xuống để thử tải lại.',
+        style: const TextStyle(
+            fontSize: AppFont.small, color: AppColors.sell, height: 1.4),
+      ),
+    );
+  }
+}
+
+/// Ô giá ở vùng GẦN NHÀ bác nhất (theo "Vị trí của tôi")
+class _LocalPriceBox extends StatelessWidget {
+  final String region;
+  final double? km;
+  final PriceRow row;
+  final String commodityUnit;
+  const _LocalPriceBox({
+    required this.region,
+    required this.km,
+    required this.row,
+    required this.commodityUnit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final far = km != null && km! > 30 ? ' (cách khoảng ${km!.round()} km)' : '';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.buyBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.buy, width: 2),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('📍 Gần nhà bác: $region$far',
+            style: const TextStyle(
+                fontSize: AppFont.small,
+                fontWeight: FontWeight.w800,
+                color: AppColors.buy)),
+        const SizedBox(height: 2),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Flexible(
+            child: FittedBox(
+              child: Text(formatVnd(row.buy),
+                  style: const TextStyle(
+                      fontSize: AppFont.huge,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.buy)),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(row.unit ?? commodityUnit,
+                style: const TextStyle(
+                    fontSize: AppFont.small, color: AppColors.textMuted)),
+          ),
+        ]),
+        if (row.change != null) _ChangeBadge(change: row.change!),
       ]),
     );
   }
