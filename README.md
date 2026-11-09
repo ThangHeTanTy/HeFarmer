@@ -7,6 +7,16 @@ sắp xếp công việc và chọn thời điểm bán được giá.
 Thiết kế xuyên suốt cho người lớn tuổi: chữ to, màu tương phản rõ, thao tác
 tối giản, có nút đọc thành tiếng, và mọi con số đều kèm lời giải thích.
 
+## Tải về
+
+Trên điện thoại Android, mở bằng trình duyệt:
+**[⬇️ Tải HeFarmer.apk](https://github.com/ThangHeTanTy/HeFarmer/releases/latest/download/HeFarmer.apk)**
+· [Các bản đã phát hành](https://github.com/ThangHeTanTy/HeFarmer/releases)
+
+Tải xong bấm vào file, cho phép trình duyệt cài ứng dụng khi điện thoại hỏi,
+rồi bấm **Cài đặt**. Về sau app **tự báo khi có bản mới** — bấm
+**Cập nhật ngay** là xong, không mất dữ liệu.
+
 ---
 
 ## Tính năng
@@ -151,6 +161,17 @@ Bản phát hành có ký số riêng và chống dịch ngược — xem [BAO-M
 flutter build apk --release --obfuscate --split-debug-info=build/debug-info
 ```
 
+## Phát hành bản mới (tự động, giống HeDeck)
+
+1. **Một lần:** nháy đúp `TAO_KHOA_KY.bat` — dùng lại khoá ký cũ (hoặc tạo
+   khoá mới) và dán secret vào GitHub.
+2. **Mỗi lần phát hành:** merge vào `main`, `git pull`, rồi nháy đúp
+   `PHAT_HANH.bat` — chọn số phiên bản, viết ghi chú thay đổi, xong.
+   GitHub Actions tự chạy test, build, ký APK và đăng Release (~10 phút).
+   App của bà con tự báo có bản mới.
+
+Chi tiết: [docs/PHAT_HANH.md](docs/PHAT_HANH.md).
+
 ---
 
 ## Cấu trúc mã nguồn
@@ -166,7 +187,8 @@ lib/
 │   ├── my_commodities_screen.dart # chọn "mặt hàng của tôi"
 │   └── alert_screen.dart         # hộp thoại báo giá & máy tính tiền bán
 ├── widgets/
-│   └── price_chart.dart          # biểu đồ giá tự vẽ (không dùng thư viện ngoài)
+│   ├── price_chart.dart          # biểu đồ giá tự vẽ (không dùng thư viện ngoài)
+│   └── update_dialog.dart        # hộp thoại "Có bản mới" -> tải -> cài
 └── services/
     ├── price_parser.dart         # bóc tách giá từ HTML/JSON/XML (thuần Dart, có test)
     ├── price_catalog.dart        # danh mục mặt hàng & ~80 nguồn (thuần Dart)
@@ -181,13 +203,16 @@ lib/
     ├── speech_service.dart       # đọc tiếng Việt + đọc số đúng cách nói dân gian
     ├── account_service.dart      # hồ sơ lưu trong máy (không mật khẩu)
     ├── settings_service.dart     # cỡ chữ, chế độ đơn giản, mặt hàng của tôi
+    ├── updater.dart              # cập nhật từ GitHub Releases (kiểm SHA-256)
     └── vn_places.dart            # 34 tỉnh/thành + tìm địa danh có gợi ý
 test/                             # ~100 test: bóc tách giá, cảnh báo, SQLite, máy chủ, giá gần nhà…
 tool/
 └── build_prices.dart             # công cụ tổng hợp giá chạy trên GitHub Actions
 .github/workflows/
 ├── prices.yml                    # máy chủ giá: 30 phút/lần -> nhánh `data`
-└── ci.yml                        # analyze + test + build APK
+├── ci.yml                        # analyze + test + build APK
+└── release.yml                   # thẻ v1.2.3 -> test, build, ký, đăng Release
+PHAT_HANH.bat, TAO_KHOA_KY.bat    # phát hành / tạo khoá ký (Windows, tools/*.ps1)
 ```
 
 ## Ghi chú kỹ thuật
@@ -203,8 +228,9 @@ tool/
 - **Riêng tư:** mọi dữ liệu cá nhân (hồ sơ, vị trí, lịch sử giá, cảnh báo) chỉ
   nằm trong máy người dùng. Máy chủ giá chỉ là các file JSON công khai — app
   chỉ **tải về**, không gửi gì lên. Không SDK quảng cáo, không theo dõi. Quyền
-  xin: Internet, Vị trí, Thông báo (và tự chạy lại sau khi khởi động máy để
-  giữ lịch kiểm tra giá).
+  xin: Internet, Vị trí, Thông báo, tự chạy lại sau khi khởi động máy (giữ
+  lịch kiểm tra giá) và cài bản cập nhật (Android vẫn luôn hỏi bác bấm
+  **Cài đặt**, app không tự cài im lặng được).
 - **CI:** `.github/workflows/ci.yml` chạy `flutter analyze`, `flutter test` và
   build APK thử cho mỗi lần đẩy code.
 

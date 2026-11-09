@@ -7,6 +7,8 @@ import 'package:hefarmer/services/account_service.dart';
 import 'package:hefarmer/services/price_parser.dart';
 import 'package:hefarmer/services/price_service.dart';
 import 'package:hefarmer/services/settings_service.dart';
+import 'package:hefarmer/services/updater.dart';
+import 'package:hefarmer/widgets/update_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// CHỮ TO KHÔNG ĐƯỢC LÀM VỠ GIAO DIỆN: vẽ các màn hình chính ở cỡ chữ lớn
@@ -144,6 +146,40 @@ void main() {
       await tester.scrollUntilVisible(
           find.textContaining('Mặt hàng của tôi:'), 200,
           scrollable: find.byType(Scrollable).first);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hộp thoại "Có bản mới": rộng $width, chữ lớn nhất',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(scaled(
+        maxTextScale,
+        Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => showUpdateDialog(context,
+                    known: const Release(
+                      version: '1.3.0',
+                      parts: [1, 3, 0],
+                      notes: '- Chữ to hơn, đọc dễ hơn\n- Thêm giá vùng gần nhà\n'
+                          '- Tự báo khi có bản mới',
+                      apkUrl: 'https://x/HeFarmer.apk',
+                      apkSize: 1,
+                      apkSha256: '',
+                    )),
+                child: const Text('mở'),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('mở'));
+      await tester.pumpAndSettle();
+      expect(find.text('🎉 Có bản mới 1.3.0'), findsOneWidget);
+      expect(find.text('Cập nhật ngay'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import '../services/account_service.dart';
 import '../services/price_service.dart';
 import '../services/settings_service.dart';
+import '../services/updater.dart';
 import '../services/vn_places.dart';
 import '../theme.dart';
+import '../widgets/update_dialog.dart';
 import 'my_commodities_screen.dart';
 
 /// Màn hình HỒ SƠ: tên để app chào, ảnh đại diện, và "Vị trí của tôi" —
@@ -270,6 +272,32 @@ class _ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         const _DisplaySettings(),
+        const SizedBox(height: 22),
+        // ----- Phiên bản & cập nhật -----
+        OutlinedButton(
+          onPressed: () => showUpdateDialog(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+            side: const BorderSide(color: AppColors.buy, width: 2),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: const Text('🔄  Kiểm tra cập nhật',
+              style: TextStyle(
+                  fontSize: AppFont.big,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.buy)),
+        ),
+        const SizedBox(height: 6),
+        Center(
+          child: Text(
+            Updater.selfBuilt
+                ? 'HeFarmer — bản tự build'
+                : 'HeFarmer phiên bản ${Updater.version}',
+            style: const TextStyle(
+                fontSize: AppFont.small, color: AppColors.textMuted),
+          ),
+        ),
         const SizedBox(height: 20),
         const Text(
           'Hồ sơ chỉ lưu trong máy này, không gửi đi đâu và không cần mật khẩu.',

@@ -10,7 +10,9 @@ import 'services/account_service.dart';
 import 'services/alert_service.dart';
 import 'services/price_service.dart';
 import 'services/settings_service.dart';
+import 'services/updater.dart';
 import 'theme.dart';
+import 'widgets/update_dialog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -182,6 +184,19 @@ class _HomePageState extends State<HomePage> {
   void _forceFinishIntro() {
     _introTimeout?.cancel();
     if (mounted && !_introDone) setState(() => _introDone = true);
+    _autoUpdateCheck();
+  }
+
+  bool _updateChecked = false;
+
+  /// Vào app xong thì hỏi GitHub có bản mới không (tối đa 1 lần/ngày).
+  /// Có thì mời cập nhật; bác bấm "Để sau" thì 3 ngày sau mới nhắc lại.
+  Future<void> _autoUpdateCheck() async {
+    if (_updateChecked) return;
+    _updateChecked = true;
+    final rel = await Updater.autoCheck();
+    if (rel == null || !mounted) return;
+    await showUpdateDialog(context, known: rel);
   }
 
   void _finishIntro() {
@@ -193,6 +208,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     setState(() => _introDone = true);
+    _autoUpdateCheck();
   }
 
   void _onTabTap(int i) {
