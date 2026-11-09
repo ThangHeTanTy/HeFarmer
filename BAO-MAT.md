@@ -5,14 +5,18 @@
    Java/Kotlin, bỏ mã và tài nguyên thừa) + lệnh build kèm --obfuscate để
    xáo trộn cả mã Dart. Kẻ xấu mở APK ra chỉ thấy tên hàm vô nghĩa.
 2. CHỐNG SỬA APK / CHÈN QUYỀN TỪ BÊN NGOÀI: quyền của app nằm cố định trong
-   AndroidManifest lúc build (chỉ 3 quyền: Internet + Vị trí). APK được KÝ SỐ
-   bằng khóa riêng của bạn — ai sửa file APK (thêm quyền, chèn mã độc, gắn
+   AndroidManifest lúc build (Internet, Vị trí, Thông báo, tự chạy lại sau
+   khởi động máy). APK được KÝ SỐ bằng khóa riêng của bạn — ai sửa file APK (thêm quyền, chèn mã độc, gắn
    quảng cáo) chữ ký sẽ vỡ, Android từ chối cài đè và người dùng phân biệt
    được bản giả. Vì vậy PHẢI tạo khóa riêng (bước dưới), đừng dùng khóa debug.
 3. KHÓA THÊM: allowBackup=false (không cho trích xuất dữ liệu app qua sao lưu),
    usesCleartextTraffic=false (chặn mọi kết nối HTTP không mã hóa — app chỉ
-   dùng HTTPS), không nhúng bất kỳ SDK quảng cáo/theo dõi nào, mật khẩu tài
-   khoản băm SHA-256 và mọi dữ liệu cá nhân chỉ nằm trong máy người dùng.
+   dùng HTTPS), không nhúng bất kỳ SDK quảng cáo/theo dõi nào, và mọi dữ
+   liệu cá nhân chỉ nằm trong máy người dùng. App không còn mật khẩu (hồ sơ
+   chỉ gồm tên, ảnh, vị trí) — mật khẩu băm của bản cũ được xoá khi cập nhật.
+4. MÁY CHỦ GIÁ: app chỉ TẢI các file JSON công khai từ nhánh `data` của kho
+   mã (raw.githubusercontent.com), không gửi dữ liệu gì lên. Ai có quyền ghi
+   vào kho mã thì sửa được giá hiển thị — chỉ cấp quyền ghi cho người tin cậy.
 
 ## Bước 1 — Tạo khóa ký riêng (làm 1 lần, GIỮ CẨN THẬN)
 Mở CMD tại thư mục android/ của dự án, chạy:

@@ -1,0 +1,41 @@
+# Kiểm tra mã mỗi lần đẩy code / mở pull request:
+# phân tích tĩnh, chạy test, build APK (tải về ở mục Artifacts).
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.47.9"
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+      # Chưa có khóa ký riêng trên CI nên APK này ký bằng khóa debug —
+      # chỉ để cài thử, KHÔNG dùng để phát hành (xem BAO-MAT.md).
+      - name: Build APK thử
+        run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hefarmer-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

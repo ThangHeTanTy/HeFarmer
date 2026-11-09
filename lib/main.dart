@@ -71,7 +71,6 @@ class _HomePageState extends State<HomePage> {
 
   // ---- Màn hình chào (intro) ----
   bool _introDone = false; // dữ liệu giá đã tải xong -> bắt đầu mờ dần
-  bool _introGone = false; // đã mờ hết -> gỡ hẳn khỏi cây giao diện
   String _greetName = '';
   Timer? _introTimeout;
   final DateTime _introStart = DateTime.now();
@@ -80,9 +79,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Lấy tên người dùng (nếu đã đăng nhập) để chào cho thân mật
+    // Lấy tên trong hồ sơ (nếu bác đã đặt) để chào cho thân mật
     currentProfile().then((p) {
-      if (mounted && p != null) setState(() => _greetName = p.name);
+      if (mounted) setState(() => _greetName = p.name);
     });
     // Phòng khi mạng quá chậm/mất mạng: tối đa 5 giây là vào app
     _introTimeout = Timer(const Duration(seconds: 5), _finishIntro);
@@ -128,10 +127,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
     setState(() => _introDone = true);
-    // chờ hiệu ứng mờ 600ms rồi gỡ hẳn
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) setState(() => _introGone = true);
-    });
   }
 
   static const _titles = [
@@ -140,7 +135,7 @@ class _HomePageState extends State<HomePage> {
     'Giá vật tư đầu vào',
     'Giá vàng - bạc',
     'Dự báo thời tiết',
-    'Tài khoản của tôi',
+    'Hồ sơ của tôi',
   ];
 
   void _onTabTap(int i) {

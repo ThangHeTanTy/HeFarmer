@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'price_service.dart';
 
@@ -12,12 +14,16 @@ import 'price_service.dart';
 /// Cơ chế 2 lớp:
 ///  1. Mỗi lần MỞ APP, app đối chiếu giá mới với các mức bác đã đặt và
 ///     bắn thông báo ngay nếu đạt.
-///  2. NHẮC HẰNG NGÀY: app tự gửi lời nhắc buổi sáng để bác mở xem giá —
-///     chạm vào lời nhắc là app kiểm tra và báo luôn nếu giá đã đạt mức.
+///  2. CHẠY NỀN (Android WorkManager): khoảng 3 giờ một lần, khi có mạng,
+///     app tự kiểm tra giá dù bác không mở app.
+///
+/// CHỈ báo theo giá THẬT của HÔM NAY: nếu hôm nay chưa tải được giá mới thì
+/// không báo (tránh báo nhầm theo số của mấy hôm trước).
 
 const _alertsKey = 'price_alerts_v1';
 const _lastNotifyKey = 'alert_last_notify_v1';
-const _dailyReminderId = 9001;
+const _legacyDailyReminderId = 9001; // lời nhắc hằng ngày của bản cũ
+const _bgTaskName = 'hefarmer_kiem_tra_gia';
 
 /// Một mức cảnh báo cho 1 mặt hàng
 class PriceAlert {
@@ -104,11 +110,13 @@ Future<void> removeAlert(String commodityId) async {
 final FlutterLocalNotificationsPlugin _notifier =
     FlutterLocalNotificationsPlugin();
 
-Future<void> initNotifications() async {
+/// [requestPermission] = false khi chạy nền (không có màn hình để hỏi quyền)
+Future<void> initNotifications({bool requestPermission = true}) async {
   const android = AndroidInitializationSettings('@mipmap/ic_launcher');
   await _notifier.initialize(
     const InitializationSettings(android: android),
   );
+  if (!requestPermission) return;
   // Android 13 trở lên phải xin phép hiện thông báo
   await _notifier
       .resolvePlatformSpecificImplementation<
@@ -132,24 +140,47 @@ Future<void> _showNotification(String title, String body, int id) async {
 
 // ---------- Kiểm tra & bắn cảnh báo ----------
 
+/// Một cảnh báo cần bắn
+class AlertHit {
+  final PriceAlert alert;
+  final int price;
+  final String unit;
+  const AlertHit(this.alert, this.price, this.unit);
+}
+
+/// Thuần (test được): chọn ra các cảnh báo cần bắn.
+///  - Chỉ xét giá THẬT của hôm nay [today] (bỏ giá cũ, giá ước tính).
+///  - Mỗi mặt hàng chỉ báo 1 lần/ngày ([lastNotified]: id -> ngày đã báo).
+List<AlertHit> alertsToFire(
+  List<PriceAlert> alerts,
+  List<CommodityResult> results,
+  String today,
+  Map<String, dynamic> lastNotified,
+) {
+  final hits = <AlertHit>[];
+  for (final alert in alerts.where((a) => a.enabled)) {
+    final r = results.where((e) => e.commodity.id == alert.commodityId);
+    if (r.isEmpty) continue;
+    final result = r.first;
+    if (!result.isFreshFor(today)) continue;
+    final price = result.latestDay!.avgBuy!;
+
+    final hit =
+        alert.above ? price >= alert.threshold : price <= alert.threshold;
+    if (!hit) continue;
+    if (lastNotified[alert.commodityId] == today) continue;
+    hits.add(AlertHit(alert, price, result.commodity.unit));
+  }
+  return hits;
+}
+
 /// So giá hiện tại với các mức đã đặt. Trả về số cảnh báo đã bắn.
-/// Mỗi mặt hàng chỉ báo 1 lần/ngày để không làm phiền bà con.
-Future<int> checkAlertsAndNotify({bool fromBackground = false}) async {
+Future<int> checkAlertsAndNotify() async {
   final alerts = (await loadAlerts()).where((a) => a.enabled).toList();
   if (alerts.isEmpty) return 0;
 
-  final prefs = await SharedPreferences.getInstance();
-  final lastMap =
-      jsonDecode(prefs.getString(_lastNotifyKey) ?? '{}') as Map<String, dynamic>;
-  final today = todayKey();
-
-  // Gom mặt hàng cần lấy giá theo từng nhóm
   final ids = alerts.map((a) => a.commodityId).toSet();
-  final needed = [
-    ...commodities,
-    ...livestockCommodities,
-    ...metalsCommodities,
-  ].where((c) => ids.contains(c.id)).toList();
+  final needed = allCommodities.where((c) => ids.contains(c.id)).toList();
   if (needed.isEmpty) return 0;
 
   List<CommodityResult> results;
@@ -159,66 +190,71 @@ Future<int> checkAlertsAndNotify({bool fromBackground = false}) async {
     return 0;
   }
 
-  var fired = 0;
-  for (final alert in alerts) {
-    final r = results.where((e) => e.commodity.id == alert.commodityId);
-    if (r.isEmpty) continue;
-    final today0 = r.first.days.isNotEmpty ? r.first.days.last : null;
-    final price = today0?.avgBuy;
-    if (price == null) continue;
+  final prefs = await SharedPreferences.getInstance();
+  final lastMap = jsonDecode(prefs.getString(_lastNotifyKey) ?? '{}')
+      as Map<String, dynamic>;
+  final today = todayKey();
 
-    final hit = alert.above ? price >= alert.threshold : price <= alert.threshold;
-    if (!hit) continue;
-
-    // đã báo hôm nay rồi thì thôi
-    if (lastMap[alert.commodityId] == today) continue;
-
-    final huong = alert.above ? 'đã VƯỢT' : 'đã XUỐNG DƯỚI';
+  final hits = alertsToFire(alerts, results, today, lastMap);
+  for (final h in hits) {
+    final huong = h.alert.above ? 'đã VƯỢT' : 'đã XUỐNG DƯỚI';
     await _showNotification(
-      '${alert.commodityName}: ${formatVnd(price)} ${r.first.commodity.unit}',
-      'Giá $huong mức bác đặt (${formatVnd(alert.threshold)}). '
+      '${h.alert.commodityName}: ${formatVnd(h.price)} ${h.unit}',
+      'Giá $huong mức bác đặt (${formatVnd(h.alert.threshold)}). '
           'Mở ứng dụng để xem chi tiết.',
-      alert.commodityId.hashCode & 0x7fffffff,
+      h.alert.commodityId.hashCode & 0x7fffffff,
     );
-    lastMap[alert.commodityId] = today;
-    fired++;
+    lastMap[h.alert.commodityId] = today;
   }
 
   await prefs.setString(_lastNotifyKey, jsonEncode(lastMap));
-  return fired;
+  return hits.length;
 }
 
-// ---------- Nhắc hằng ngày ----------
+// ---------- Chạy nền ----------
 
-/// Đặt lời nhắc hằng ngày để bác nhớ mở app xem giá.
-/// (Chạy nền thật sự cần thư viện workmanager, nhưng bản hiện tại của nó
-/// KHÔNG build được với Flutter mới — dùng lời nhắc là cách chắc chắn nhất
-/// mà vẫn không bỏ lỡ giá.)
+/// Điểm vào khi Android đánh thức app chạy nền (không có giao diện).
+@pragma('vm:entry-point')
+void alertCallbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      await initNotifications(requestPermission: false);
+      await checkAlertsAndNotify();
+    } catch (e) {
+      debugPrint('Kiểm tra giá chạy nền lỗi: $e');
+    }
+    // Luôn báo "xong": lỗi mạng thì lần sau (3 giờ nữa) thử lại
+    return true;
+  });
+}
+
+bool _workmanagerReady = false;
+
+/// Bật/tắt việc kiểm tra giá chạy nền theo danh sách cảnh báo hiện có.
+/// Gọi lại mỗi khi bác thêm/xoá cảnh báo.
 Future<void> setupBackgroundCheck() async {
   try {
+    // Bản cũ dùng lời nhắc hằng ngày thay cho chạy nền -> gỡ đi
+    await _notifier.cancel(_legacyDailyReminderId);
+
+    if (!_workmanagerReady) {
+      await Workmanager().initialize(alertCallbackDispatcher);
+      _workmanagerReady = true;
+    }
     final alerts = await loadAlerts();
     if (alerts.where((a) => a.enabled).isEmpty) {
-      await _notifier.cancel(_dailyReminderId);
+      await Workmanager().cancelByUniqueName(_bgTaskName);
       return;
     }
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'nhac_xem_gia',
-        'Nhắc xem giá hằng ngày',
-        channelDescription: 'Nhắc mở ứng dụng để xem giá mới nhất',
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-      ),
+    await Workmanager().registerPeriodicTask(
+      _bgTaskName,
+      _bgTaskName,
+      frequency: const Duration(hours: 3),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
     );
-    await _notifier.periodicallyShow(
-      _dailyReminderId,
-      'Giá hôm nay đã cập nhật',
-      'Bác mở ứng dụng xem giá nông sản và các mức cảnh báo đã đặt nhé.',
-      RepeatInterval.daily,
-      details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-    );
-  } catch (_) {
-    // máy không cho đặt lịch thông báo -> bỏ qua, app vẫn chạy bình thường
+  } catch (e) {
+    // máy không cho chạy nền -> vẫn còn kiểm tra mỗi lần mở app
+    debugPrint('Không đặt được lịch chạy nền: $e');
   }
 }

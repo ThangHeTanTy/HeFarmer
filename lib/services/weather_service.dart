@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 
+import 'account_service.dart';
+
 /// DỊCH VỤ THỜI TIẾT — dùng API Open-Meteo (https://open-meteo.com)
 /// Miễn phí, không cần đăng ký API key, dữ liệu từ các mô hình khí tượng
 /// quốc tế (ECMWF, GFS...), rất phù hợp cho ứng dụng nông nghiệp.
@@ -89,6 +91,20 @@ Future<DeviceLocation> getDeviceLocation() async {
     // không sao, dùng tên mặc định
   }
   return DeviceLocation(pos.latitude, pos.longitude, placeName);
+}
+
+/// Vị trí dùng cho thời tiết: ƯU TIÊN "Vị trí của tôi" bác đã đặt trong
+/// tab Hồ sơ (không cần bật GPS), chưa đặt thì mới hỏi GPS của máy.
+Future<({DeviceLocation location, bool fromProfile})>
+    getPreferredLocation() async {
+  final home = await getHomeLocation();
+  if (home != null) {
+    return (
+      location: DeviceLocation(home.latitude, home.longitude, home.label),
+      fromProfile: true,
+    );
+  }
+  return (location: await getDeviceLocation(), fromProfile: false);
 }
 
 Future<WeatherData> fetchWeather(double latitude, double longitude) async {

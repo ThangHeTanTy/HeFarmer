@@ -6,9 +6,9 @@ import '../services/account_service.dart';
 import '../services/vn_places.dart';
 import '../theme.dart';
 
-/// Màn hình TÀI KHOẢN: đăng nhập / đăng ký (lưu trong máy), đổi avatar,
-/// và đặt "Vị trí của tôi" — tab Thời tiết sẽ ưu tiên vị trí này thay GPS,
-/// giúp người cao tuổi không cần biết cách bật/chia sẻ vị trí.
+/// Màn hình HỒ SƠ: tên để app chào, ảnh đại diện, và "Vị trí của tôi" —
+/// tab Thời tiết ưu tiên vị trí này thay GPS, tab Giá dùng nó để chọn ra
+/// giá ở vùng gần nhà nhất. Không cần mật khẩu, không cần đăng nhập.
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
@@ -19,7 +19,6 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   Profile? _profile;
   HomeLocation? _home;
-  bool _loading = true;
 
   @override
   void initState() {
@@ -34,209 +33,22 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(() {
         _profile = p;
         _home = h;
-        _loading = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    final p = _profile;
+    if (p == null) {
       return const Center(
           child: CircularProgressIndicator(color: AppColors.primary));
     }
-    return _profile == null
-        ? _AuthView(onDone: _refresh)
-        : _ProfileView(profile: _profile!, home: _home, onChanged: _refresh);
+    return _ProfileView(profile: p, home: _home, onChanged: _refresh);
   }
 }
 
-// ================== ĐĂNG NHẬP / ĐĂNG KÝ ==================
-
-class _AuthView extends StatefulWidget {
-  final VoidCallback onDone;
-  const _AuthView({required this.onDone});
-
-  @override
-  State<_AuthView> createState() => _AuthViewState();
-}
-
-class _AuthViewState extends State<_AuthView> {
-  bool _isRegister = false;
-  bool _busy = false;
-  bool _hidePassword = true;
-  String? _error;
-  final _name = TextEditingController();
-  final _username = TextEditingController();
-  final _password = TextEditingController();
-  final _password2 = TextEditingController();
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _username.dispose();
-    _password.dispose();
-    _password2.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    String? err;
-    if (_isRegister) {
-      if (_password.text != _password2.text) {
-        err = 'Hai lần nhập mật khẩu chưa giống nhau.';
-      } else {
-        err = await register(
-          name: _name.text,
-          username: _username.text,
-          password: _password.text,
-        );
-      }
-    } else {
-      err = await login(username: _username.text, password: _password.text);
-    }
-    if (!mounted) return;
-    setState(() {
-      _busy = false;
-      _error = err;
-    });
-    if (err == null) widget.onDone();
-  }
-
-  InputDecoration _dec(String label, {Widget? suffix}) => InputDecoration(
-        labelText: label,
-        labelStyle:
-            const TextStyle(fontSize: AppFont.body, color: AppColors.textMuted),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        suffixIcon: suffix,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
-      children: [
-        const Center(child: Text('👨‍🌾', style: TextStyle(fontSize: 64))),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(
-            _isRegister ? 'Tạo tài khoản mới' : 'Đăng nhập',
-            style: const TextStyle(
-                fontSize: AppFont.title,
-                fontWeight: FontWeight.w900,
-                color: AppColors.primary),
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Center(
-          child: Text(
-            'Tài khoản được lưu ngay trong máy của bạn',
-            style:
-                TextStyle(fontSize: AppFont.small, color: AppColors.textMuted),
-          ),
-        ),
-        const SizedBox(height: 20),
-        if (_isRegister) ...[
-          TextField(
-            controller: _name,
-            style: const TextStyle(fontSize: AppFont.body),
-            decoration: _dec('Tên của bạn (ví dụ: Ông Ba)'),
-          ),
-          const SizedBox(height: 14),
-        ],
-        TextField(
-          controller: _username,
-          style: const TextStyle(fontSize: AppFont.body),
-          autocorrect: false,
-          decoration: _dec('Tên đăng nhập'),
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: _password,
-          obscureText: _hidePassword,
-          style: const TextStyle(fontSize: AppFont.body),
-          decoration: _dec(
-            'Mật khẩu',
-            suffix: IconButton(
-              icon: Icon(
-                  _hidePassword ? Icons.visibility : Icons.visibility_off,
-                  size: 26),
-              onPressed: () => setState(() => _hidePassword = !_hidePassword),
-            ),
-          ),
-        ),
-        if (_isRegister) ...[
-          const SizedBox(height: 14),
-          TextField(
-            controller: _password2,
-            obscureText: _hidePassword,
-            style: const TextStyle(fontSize: AppFont.body),
-            decoration: _dec('Nhập lại mật khẩu'),
-          ),
-        ],
-        if (_error != null) ...[
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                color: AppColors.downBg,
-                borderRadius: BorderRadius.circular(10)),
-            child: Text(_error!,
-                style: const TextStyle(
-                    fontSize: AppFont.body, color: AppColors.down)),
-          ),
-        ],
-        const SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: _busy ? null : _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: _busy
-              ? const SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 3))
-              : Text(_isRegister ? 'Đăng ký' : 'Đăng nhập',
-                  style: const TextStyle(
-                      fontSize: AppFont.big,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white)),
-        ),
-        const SizedBox(height: 14),
-        TextButton(
-          onPressed: _busy
-              ? null
-              : () => setState(() {
-                    _isRegister = !_isRegister;
-                    _error = null;
-                  }),
-          child: Text(
-            _isRegister
-                ? 'Đã có tài khoản? Bấm vào đây để đăng nhập'
-                : 'Chưa có tài khoản? Bấm vào đây để đăng ký',
-            style: const TextStyle(
-                fontSize: AppFont.body,
-                color: AppColors.buy,
-                fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ================== HỒ SƠ SAU KHI ĐĂNG NHẬP ==================
+// ================== HỒ SƠ ==================
 
 class _ProfileView extends StatelessWidget {
   final Profile profile;
@@ -281,6 +93,56 @@ class _ProfileView extends StatelessWidget {
       await updateAvatar(chosen);
       onChanged();
     }
+  }
+
+  Future<void> _editName(BuildContext context) async {
+    final controller = TextEditingController(text: profile.name);
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Bác tên gì ạ?',
+            style:
+                TextStyle(fontSize: AppFont.big, fontWeight: FontWeight.w800)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          style: const TextStyle(fontSize: AppFont.body),
+          decoration: InputDecoration(
+            hintText: 'Ví dụ: Ông Ba, Cô Tư',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Thôi', style: TextStyle(fontSize: AppFont.body)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Lưu',
+                style: TextStyle(
+                    fontSize: AppFont.body,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    final text = controller.text;
+    controller.dispose();
+    if (saved != true) return;
+    final err = await updateName(text);
+    if (!context.mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(err, style: const TextStyle(fontSize: AppFont.body)),
+        backgroundColor: AppColors.down,
+      ));
+      return;
+    }
+    onChanged();
   }
 
   Future<void> _pickLocation(BuildContext context) async {
@@ -337,16 +199,17 @@ class _ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Center(
-          child: Text(profile.name,
-              style: const TextStyle(
-                  fontSize: AppFont.title,
+          child: TextButton.icon(
+            onPressed: () => _editName(context),
+            icon: const Icon(Icons.edit, size: 24, color: AppColors.primary),
+            label: Text(
+              profile.hasName ? profile.name : 'Chạm để đặt tên của bác',
+              style: TextStyle(
+                  fontSize: profile.hasName ? AppFont.title : AppFont.big,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.text)),
-        ),
-        Center(
-          child: Text('@${profile.username}',
-              style: const TextStyle(
-                  fontSize: AppFont.small, color: AppColors.textMuted)),
+                  color: profile.hasName ? AppColors.text : AppColors.buy),
+            ),
+          ),
         ),
         const SizedBox(height: 24),
 
@@ -385,7 +248,8 @@ class _ProfileView extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       const Text(
-                        'Tab Thời tiết sẽ ưu tiên lấy dự báo tại đây,\nkhông cần bật GPS.',
+                        'Tab Thời tiết lấy dự báo tại đây (không cần bật GPS),\n'
+                        'tab Giá hiện trước giá ở vùng gần nhà nhất.',
                         style: TextStyle(
                             fontSize: AppFont.small,
                             color: AppColors.textMuted,
@@ -400,23 +264,12 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        OutlinedButton(
-          onPressed: () async {
-            await logout();
-            onChanged();
-          },
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            side: const BorderSide(color: AppColors.down, width: 2),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          child: const Text('Đăng xuất',
-              style: TextStyle(
-                  fontSize: AppFont.big,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.down)),
+        const SizedBox(height: 20),
+        const Text(
+          'Hồ sơ chỉ lưu trong máy này, không gửi đi đâu và không cần mật khẩu.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontSize: AppFont.small, color: AppColors.textMuted, height: 1.4),
         ),
       ],
     );

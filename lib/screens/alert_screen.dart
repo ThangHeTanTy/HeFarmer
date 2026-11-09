@@ -101,6 +101,7 @@ Future<bool?> showAlertDialog(
             TextButton(
               onPressed: () async {
                 await removeAlert(commodityId);
+                await setupBackgroundCheck();
                 if (ctx.mounted) Navigator.pop(ctx, true);
               },
               child: const Text('Xoá cảnh báo',

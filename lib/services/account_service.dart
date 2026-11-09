@@ -1,20 +1,23 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// DỊCH VỤ TÀI KHOẢN — lưu ngay trong máy (SharedPreferences), không cần
-/// máy chủ: phù hợp app cá nhân cho người cao tuổi, mở app là dùng được,
-/// không lo quên mật khẩu làm mất dữ liệu trên mạng.
-/// Mật khẩu được băm SHA-256 kèm muối, không lưu dạng chữ thường.
+/// HỒ SƠ NGƯỜI DÙNG — lưu ngay trong máy, KHÔNG cần mật khẩu.
 ///
-/// Vị trí cư trú (homeLocation) do người dùng đặt trong tab Tài khoản sẽ
-/// được tab Thời tiết ƯU TIÊN dùng thay cho GPS — rất hợp với người cao
-/// tuổi không quen bật/chia sẻ vị trí.
+/// Trước đây app có đăng ký/đăng nhập với mật khẩu, nhưng mọi dữ liệu đều
+/// nằm trong máy nên mật khẩu không bảo vệ thêm được gì, lại làm khó người
+/// cao tuổi (quên mật khẩu là coi như mất hồ sơ). Nay chỉ còn hồ sơ gồm
+/// tên để chào, ảnh đại diện và "Vị trí của tôi".
+///
+/// Vị trí cư trú (homeLocation) được tab Thời tiết ƯU TIÊN dùng thay cho GPS
+/// và tab Giá dùng để chọn ra giá ở vùng gần nhà nhất.
 
-const _accountsKey = 'accounts_v1';
-const _sessionKey = 'session_user_v1';
+const _profileKey = 'profile_v2';
 const _homeLocationKey = 'home_location_v1';
+
+// Khoá của phiên bản cũ (có mật khẩu) — chỉ dùng để chuyển dữ liệu một lần
+const _legacyAccountsKey = 'accounts_v1';
+const _legacySessionKey = 'session_user_v1';
 
 /// Danh sách avatar có sẵn để người dùng chọn (chạm là đổi, không cần ảnh)
 const avatarChoices = [
@@ -24,14 +27,18 @@ const avatarChoices = [
 ];
 
 class Profile {
-  final String username;
-  final String name;
+  final String name; // rỗng = chưa đặt tên
   final String avatar;
-  const Profile({
-    required this.username,
-    required this.name,
-    required this.avatar,
-  });
+  const Profile({required this.name, required this.avatar});
+
+  bool get hasName => name.trim().isNotEmpty;
+
+  Map<String, dynamic> toJson() => {'name': name, 'avatar': avatar};
+
+  factory Profile.fromJson(Map<String, dynamic> j) => Profile(
+        name: j['name'] as String? ?? '',
+        avatar: j['avatar'] as String? ?? avatarChoices.first,
+      );
 }
 
 class HomeLocation {
@@ -43,139 +50,91 @@ class HomeLocation {
     required this.longitude,
     required this.label,
   });
+
+  Map<String, dynamic> toJson() =>
+      {'latitude': latitude, 'longitude': longitude, 'label': label};
 }
 
-String _hash(String username, String password) {
-  return sha256.convert(utf8.encode('nongdan|$username|$password')).toString();
+/// Chuyển hồ sơ từ bản cũ (có tài khoản + mật khẩu) sang hồ sơ mới, rồi XOÁ
+/// hẳn dữ liệu mật khẩu băm cũ khỏi máy. Chạy nhiều lần cũng không sao.
+Future<void> _migrateLegacyAccounts(SharedPreferences prefs) async {
+  final raw = prefs.getString(_legacyAccountsKey);
+  if (raw == null) return;
+  try {
+    if (prefs.getString(_profileKey) == null) {
+      final accounts = jsonDecode(raw) as Map<String, dynamic>;
+      // Ưu tiên tài khoản đang đăng nhập, không có thì lấy tài khoản đầu tiên
+      final session = prefs.getString(_legacySessionKey);
+      final key = (session != null && accounts.containsKey(session))
+          ? session
+          : (accounts.keys.isNotEmpty ? accounts.keys.first : null);
+      final acc = key == null ? null : accounts[key] as Map<String, dynamic>?;
+      if (acc != null) {
+        final profile = Profile(
+          name: acc['name'] as String? ?? '',
+          avatar: acc['avatar'] as String? ?? avatarChoices.first,
+        );
+        await prefs.setString(_profileKey, jsonEncode(profile.toJson()));
+        final home = acc['home'];
+        if (home != null && prefs.getString(_homeLocationKey) == null) {
+          await prefs.setString(_homeLocationKey, jsonEncode(home));
+        }
+      }
+    }
+  } catch (_) {
+    // dữ liệu cũ hỏng -> bỏ qua, bắt đầu hồ sơ mới
+  }
+  await prefs.remove(_legacyAccountsKey);
+  await prefs.remove(_legacySessionKey);
 }
 
-Future<Map<String, dynamic>> _loadAccounts(SharedPreferences prefs) async {
-  return jsonDecode(prefs.getString(_accountsKey) ?? '{}')
-      as Map<String, dynamic>;
+/// Hồ sơ hiện tại. Luôn trả về một hồ sơ (chưa đặt tên thì tên rỗng).
+Future<Profile> currentProfile() async {
+  final prefs = await SharedPreferences.getInstance();
+  await _migrateLegacyAccounts(prefs);
+  final raw = prefs.getString(_profileKey);
+  if (raw == null) return const Profile(name: '', avatar: '👨‍🌾');
+  try {
+    return Profile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  } catch (_) {
+    return const Profile(name: '', avatar: '👨‍🌾');
+  }
 }
 
-/// Đăng ký tài khoản mới. Trả về thông báo lỗi (tiếng Việt) hoặc null nếu OK.
-Future<String?> register({
-  required String name,
-  required String username,
-  required String password,
-}) async {
-  final u = username.trim().toLowerCase();
+Future<void> _saveProfile(Profile p) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(_profileKey, jsonEncode(p.toJson()));
+}
+
+/// Đổi tên để app chào. Trả về thông báo lỗi hoặc null nếu OK.
+Future<String?> updateName(String name) async {
   final n = name.trim();
-  if (n.isEmpty) return 'Bạn chưa nhập tên hiển thị.';
-  if (u.length < 3) return 'Tên đăng nhập cần ít nhất 3 ký tự.';
-  if (!RegExp(r'^[a-z0-9_.]+$').hasMatch(u)) {
-    return 'Tên đăng nhập chỉ gồm chữ thường, số, dấu chấm hoặc gạch dưới.';
-  }
-  if (password.length < 4) return 'Mật khẩu cần ít nhất 4 ký tự.';
-
-  final prefs = await SharedPreferences.getInstance();
-  final accounts = await _loadAccounts(prefs);
-  if (accounts.containsKey(u)) {
-    return 'Tên đăng nhập này đã có người dùng, hãy chọn tên khác.';
-  }
-  accounts[u] = {
-    'name': n,
-    'hash': _hash(u, password),
-    'avatar': avatarChoices.first,
-    'home': null,
-  };
-  await prefs.setString(_accountsKey, jsonEncode(accounts));
-  await prefs.setString(_sessionKey, u);
+  if (n.length > 40) return 'Tên dài quá, bác nhập ngắn lại nhé.';
+  final p = await currentProfile();
+  await _saveProfile(Profile(name: n, avatar: p.avatar));
   return null;
-}
-
-/// Đăng nhập. Trả về thông báo lỗi hoặc null nếu OK.
-Future<String?> login({
-  required String username,
-  required String password,
-}) async {
-  final u = username.trim().toLowerCase();
-  final prefs = await SharedPreferences.getInstance();
-  final accounts = await _loadAccounts(prefs);
-  final acc = accounts[u] as Map<String, dynamic>?;
-  if (acc == null || acc['hash'] != _hash(u, password)) {
-    return 'Tên đăng nhập hoặc mật khẩu chưa đúng.';
-  }
-  await prefs.setString(_sessionKey, u);
-  // Khôi phục vị trí cư trú đã lưu của tài khoản này
-  final home = acc['home'];
-  if (home != null) {
-    await prefs.setString(_homeLocationKey, jsonEncode(home));
-  }
-  return null;
-}
-
-Future<void> logout() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.remove(_sessionKey);
-  // Giữ nguyên _homeLocationKey để tab thời tiết vẫn hoạt động sau đăng xuất
-}
-
-/// Hồ sơ của người đang đăng nhập, hoặc null nếu chưa đăng nhập.
-Future<Profile?> currentProfile() async {
-  final prefs = await SharedPreferences.getInstance();
-  final u = prefs.getString(_sessionKey);
-  if (u == null) return null;
-  final accounts = await _loadAccounts(prefs);
-  final acc = accounts[u] as Map<String, dynamic>?;
-  if (acc == null) return null;
-  return Profile(
-    username: u,
-    name: acc['name'] as String? ?? u,
-    avatar: acc['avatar'] as String? ?? avatarChoices.first,
-  );
 }
 
 Future<void> updateAvatar(String avatar) async {
-  final prefs = await SharedPreferences.getInstance();
-  final u = prefs.getString(_sessionKey);
-  if (u == null) return;
-  final accounts = await _loadAccounts(prefs);
-  final acc = accounts[u] as Map<String, dynamic>?;
-  if (acc == null) return;
-  acc['avatar'] = avatar;
-  await prefs.setString(_accountsKey, jsonEncode(accounts));
+  final p = await currentProfile();
+  await _saveProfile(Profile(name: p.name, avatar: avatar));
 }
 
 /// Đặt vị trí cư trú — tab Thời tiết sẽ ưu tiên vị trí này thay cho GPS.
 Future<void> setHomeLocation(HomeLocation loc) async {
   final prefs = await SharedPreferences.getInstance();
-  final data = {
-    'latitude': loc.latitude,
-    'longitude': loc.longitude,
-    'label': loc.label,
-  };
-  await prefs.setString(_homeLocationKey, jsonEncode(data));
-  // Lưu kèm vào tài khoản đang đăng nhập (để đăng nhập lại vẫn còn)
-  final u = prefs.getString(_sessionKey);
-  if (u != null) {
-    final accounts = await _loadAccounts(prefs);
-    final acc = accounts[u] as Map<String, dynamic>?;
-    if (acc != null) {
-      acc['home'] = data;
-      await prefs.setString(_accountsKey, jsonEncode(accounts));
-    }
-  }
+  await prefs.setString(_homeLocationKey, jsonEncode(loc.toJson()));
 }
 
 Future<void> clearHomeLocation() async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.remove(_homeLocationKey);
-  final u = prefs.getString(_sessionKey);
-  if (u != null) {
-    final accounts = await _loadAccounts(prefs);
-    final acc = accounts[u] as Map<String, dynamic>?;
-    if (acc != null) {
-      acc['home'] = null;
-      await prefs.setString(_accountsKey, jsonEncode(accounts));
-    }
-  }
 }
 
 Future<HomeLocation?> getHomeLocation() async {
   try {
     final prefs = await SharedPreferences.getInstance();
+    await _migrateLegacyAccounts(prefs);
     final raw = prefs.getString(_homeLocationKey);
     if (raw == null) return null;
     final m = jsonDecode(raw) as Map<String, dynamic>;

@@ -68,7 +68,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       if (mounted) {
         setState(() => _error =
             '${e.toString().replaceFirst('Exception: ', '')}\n\n'
-            'Mẹo: vào tab TÀI KHOẢN và đặt "Vị trí của tôi" — '
+            'Mẹo: vào tab HỒ SƠ (Tôi) và đặt "Vị trí của tôi" — '
             'app sẽ luôn lấy thời tiết tại đó, không cần bật GPS.');
       }
     } finally {
@@ -102,7 +102,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           color: AppColors.text)),
                   Text(
                     _fromProfile
-                        ? 'Theo vị trí bạn đã đặt trong tab Tài khoản'
+                        ? 'Theo vị trí bạn đã đặt trong tab Hồ sơ'
                         : 'Theo định vị GPS của máy',
                     style: const TextStyle(
                         fontSize: AppFont.small, color: AppColors.textMuted),

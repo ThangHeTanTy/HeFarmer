@@ -4,6 +4,8 @@
 /// Việt Nam hiện KHÔNG có API JSON công khai miễn phí cho giá cà phê /
 /// hồ tiêu / mủ cao su, nên ứng dụng đọc các trang giá uy tín cập nhật
 /// hằng ngày và bóc tách con số từ nội dung trang.
+library;
+
 import 'dart:convert';
 
 class PriceRow {
