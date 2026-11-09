@@ -46,6 +46,16 @@ Quan trọng nhất là mục **"Hôm nay nên làm gì?"** — dịch số li�
 Bản cũ có đăng ký/đăng nhập: lần mở đầu tiên app tự chuyển tên, ảnh và vị trí
 sang hồ sơ mới rồi **xoá hẳn mật khẩu băm** khỏi máy.
 
+### 🧓 Dành riêng cho người cao tuổi (tab "Tôi")
+- **Cỡ chữ Vừa / To / Rất to** — đổi là cả app to lên ngay, cộng thêm vào cỡ
+  chữ của điện thoại (không bao giờ nhỏ hơn cỡ bác đã đặt trong máy). Con số
+  giá luôn nằm trên một dòng, chữ to quá thì tự thu nhỏ cho vừa ô — không bị
+  ngắt thành "98.50 / 0" gây đọc nhầm.
+- **Chế độ đơn giản** — chỉ còn 3 tab: **Giá của tôi**, Thời tiết, Tôi.
+  Bác chọn những thứ mình trồng, nuôi (ví dụ cà phê + heo hơi), tab "Giá của
+  tôi" chỉ hiện đúng những mặt hàng đó, chữ trên thanh tab cũng to hơn.
+- Giá cũ luôn ghi rõ ngày: *"⏰ Đây là giá ngày 07/11 — hôm nay chưa có giá mới."*
+
 ### Tiện ích dùng chung ở mọi thẻ giá
 | | |
 |---|---|
@@ -148,11 +158,12 @@ flutter build apk --release --obfuscate --split-debug-info=build/debug-info
 ```
 lib/
 ├── main.dart                     # 6 tab, thanh tab bán cung nổi, màn hình chào
-├── theme.dart                    # màu sắc & cỡ chữ (chỉnh chữ to hơn ở đây)
+├── theme.dart                    # màu sắc & cỡ chữ gốc (người dùng chỉnh thêm ở tab Tôi)
 ├── screens/
 │   ├── price_screen.dart         # màn hình giá (dùng chung 4 tab giá)
 │   ├── weather_screen.dart       # thời tiết + gợi ý việc nhà nông + bản đồ
-│   ├── account_screen.dart       # hồ sơ: tên, avatar, chọn vị trí có gợi ý
+│   ├── account_screen.dart       # hồ sơ: tên, avatar, vị trí, cỡ chữ, chế độ đơn giản
+│   ├── my_commodities_screen.dart # chọn "mặt hàng của tôi"
 │   └── alert_screen.dart         # hộp thoại báo giá & máy tính tiền bán
 ├── widgets/
 │   └── price_chart.dart          # biểu đồ giá tự vẽ (không dùng thư viện ngoài)
@@ -169,8 +180,9 @@ lib/
     ├── alert_service.dart        # cảnh báo giá, thông báo, chạy nền (WorkManager)
     ├── speech_service.dart       # đọc tiếng Việt + đọc số đúng cách nói dân gian
     ├── account_service.dart      # hồ sơ lưu trong máy (không mật khẩu)
+    ├── settings_service.dart     # cỡ chữ, chế độ đơn giản, mặt hàng của tôi
     └── vn_places.dart            # 34 tỉnh/thành + tìm địa danh có gợi ý
-test/                             # ~90 test: bóc tách giá, cảnh báo, SQLite, máy chủ, giá gần nhà…
+test/                             # ~100 test: bóc tách giá, cảnh báo, SQLite, máy chủ, giá gần nhà…
 tool/
 └── build_prices.dart             # công cụ tổng hợp giá chạy trên GitHub Actions
 .github/workflows/

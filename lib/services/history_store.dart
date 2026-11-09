@@ -22,7 +22,11 @@ const historyKeepDays = 1100;
 
 class HistoryStore {
   final Future<Database> _db;
-  HistoryStore._(this._db);
+  HistoryStore._(this._db) {
+    // Mở CSDL lỗi (hiếm) thì để từng lệnh đọc/ghi tự bắt lỗi — không để lỗi
+    // nổ ra ngoài trước khi có ai kịp chờ.
+    _db.ignore();
+  }
 
   /// Kho dùng chung của app (mở 1 lần, dùng mãi)
   static HistoryStore? _instance;

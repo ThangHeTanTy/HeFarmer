@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'screens/account_screen.dart';
+import 'screens/my_commodities_screen.dart';
 import 'screens/price_screen.dart';
 import 'screens/weather_screen.dart';
 import 'services/account_service.dart';
 import 'services/alert_service.dart';
 import 'services/price_service.dart';
+import 'services/settings_service.dart';
 import 'theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await loadSettings(); // cỡ chữ, chế độ đơn giản — đọc trước để khỏi nháy
   ErrorWidget.builder = (details) => const Material(
         color: Colors.white,
         child: Center(
@@ -49,10 +52,48 @@ class NongDanApp extends StatelessWidget {
               color: Colors.white),
         ),
       ),
+      // Cỡ chữ bác chọn trong tab Tôi, nhân thêm vào cỡ chữ của điện thoại
+      builder: (context, child) => ValueListenableBuilder<AppSettings>(
+        valueListenable: appSettings,
+        builder: (context, st, _) {
+          final mq = MediaQuery.of(context);
+          final scale =
+              effectiveTextScale(mq.textScaler.scale(1), st.textScale);
+          return MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          );
+        },
+      ),
       home: const HomePage(),
     );
   }
 }
+
+/// Một tab của thanh dưới
+class _TabSpec {
+  final String id;
+  final String icon;
+  final String label; // chữ ngắn dưới biểu tượng
+  final String title; // tiêu đề trên cùng
+  const _TabSpec(this.id, this.icon, this.label, this.title);
+}
+
+const _fullTabs = [
+  _TabSpec('crop', '🌱', 'Nông sản', 'Giá nông sản cây công nghiệp'),
+  _TabSpec('livestock', '🐓', 'Vật nuôi', 'Giá vật nuôi'),
+  _TabSpec('inputs', '🧪', 'Vật tư', 'Giá vật tư đầu vào'),
+  _TabSpec('metals', '🪙', 'Vàng bạc', 'Giá vàng - bạc'),
+  _TabSpec('weather', '⛅', 'Thời tiết', 'Dự báo thời tiết'),
+  _TabSpec('account', '👤', 'Tôi', 'Hồ sơ của tôi'),
+];
+
+/// CHẾ ĐỘ ĐƠN GIẢN: chỉ 3 tab, chữ trên thanh tab to hơn
+const _simpleTabs = [
+  _TabSpec('mine', '🌾', 'Giá của tôi', 'Giá của tôi'),
+  _TabSpec('weather', '⛅', 'Thời tiết', 'Dự báo thời tiết'),
+  _TabSpec('account', '👤', 'Tôi', 'Hồ sơ của tôi'),
+];
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -65,9 +106,12 @@ class _HomePageState extends State<HomePage> {
   int _index = 0;
   // Mỗi tab có bộ đếm riêng: bấm vào tab nào thì chỉ tab đó được nhắc
   // làm mới (và nó cũng chỉ tải lại nếu dữ liệu đã cũ hơn 10 phút).
-  final Map<int, int> _ticks = {};
+  final Map<String, int> _ticks = {};
   // Các tab đã từng mở -> giữ nguyên trong bộ nhớ để quay lại là thấy ngay
-  final Set<int> _daMo = {0};
+  late final Set<String> _daMo = {_tabs.first.id};
+  late bool _simple = appSettings.value.simpleMode;
+
+  List<_TabSpec> get _tabs => _simple ? _simpleTabs : _fullTabs;
 
   // ---- Màn hình chào (intro) ----
   bool _introDone = false; // dữ liệu giá đã tải xong -> bắt đầu mờ dần
@@ -87,12 +131,33 @@ class _HomePageState extends State<HomePage> {
     _introTimeout = Timer(const Duration(seconds: 5), _finishIntro);
     // Chuẩn bị thông báo + kiểm tra cảnh báo giá ngay khi mở app
     _setupAlerts();
+    appSettings.addListener(_onSettingsChanged);
+    // Chế độ đơn giản mà chưa chọn mặt hàng nào: không có gì để chờ tải
+    if (_simple && appSettings.value.myCommodities.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finishIntro());
+    }
   }
 
   @override
   void dispose() {
+    appSettings.removeListener(_onSettingsChanged);
     _introTimeout?.cancel();
     super.dispose();
+  }
+
+  /// Bật/tắt chế độ đơn giản (bác đang ở tab Tôi) -> đổi bộ tab, vẫn ở
+  /// tab Tôi. Đổi mặt hàng của tôi -> tab "Giá của tôi" tự dựng lại.
+  void _onSettingsChanged() {
+    final simple = appSettings.value.simpleMode;
+    if (simple == _simple) {
+      setState(() {});
+      return;
+    }
+    setState(() {
+      _simple = simple;
+      _index = _tabs.indexWhere((t) => t.id == 'account');
+      _daMo.add('account');
+    });
   }
 
   Future<void> _setupAlerts() async {
@@ -109,7 +174,8 @@ class _HomePageState extends State<HomePage> {
   /// dữ liệu cho các tab còn lại để chuyển tab là thấy ngay.
   void _khiTabDauTaiXong() {
     _finishIntro();
-    prefetchOtherTabs();
+    // Chế độ đơn giản chỉ có 1 tab giá, không cần tải sẵn tab khác
+    if (!_simple) prefetchOtherTabs();
   }
 
   /// Bấm "Vào ứng dụng ngay" -> vào thẳng, không phải chờ
@@ -129,79 +195,82 @@ class _HomePageState extends State<HomePage> {
     setState(() => _introDone = true);
   }
 
-  static const _titles = [
-    'Giá nông sản cây công nghiệp',
-    'Giá vật nuôi',
-    'Giá vật tư đầu vào',
-    'Giá vàng - bạc',
-    'Dự báo thời tiết',
-    'Hồ sơ của tôi',
-  ];
-
   void _onTabTap(int i) {
+    final id = _tabs[i].id;
     setState(() {
       _index = i;
-      _daMo.add(i);
-      _ticks[i] = (_ticks[i] ?? 0) + 1;
+      _daMo.add(id);
+      _ticks[id] = (_ticks[id] ?? 0) + 1;
     });
   }
 
   /// Dựng nội dung 1 tab. Dùng key CỐ ĐỊNH để trạng thái được giữ nguyên;
   /// việc làm mới do refreshTick quyết định.
-  Widget _trangTab(int i) {
-    final tick = _ticks[i] ?? 0;
-    return switch (i) {
-      0 => PriceScreen(
-          key: const ValueKey('crop'),
-          title: 'Giá nông sản hôm nay',
-          commodityList: commodities,
-          cacheKey: 'crop',
-          onDataLoaded: _khiTabDauTaiXong,
+  Widget _trangTab(String id) {
+    final tick = _ticks[id] ?? 0;
+    final first = id == _tabs.first.id;
+    PriceScreen price(String title, List<Commodity> list) => PriceScreen(
+          key: ValueKey(id),
+          title: title,
+          commodityList: list,
+          cacheKey: id,
+          onDataLoaded: first ? _khiTabDauTaiXong : null,
           refreshTick: tick,
-        ),
-      1 => PriceScreen(
-          key: const ValueKey('livestock'),
-          title: 'Giá vật nuôi hôm nay',
-          commodityList: livestockCommodities,
-          cacheKey: 'livestock',
-          refreshTick: tick,
-        ),
-      2 => PriceScreen(
-          key: const ValueKey('inputs'),
-          title: 'Giá vật tư đầu vào',
-          commodityList: inputCommodities,
-          cacheKey: 'inputs',
-          refreshTick: tick,
-        ),
-      3 => PriceScreen(
-          key: const ValueKey('metals'),
-          title: 'Giá vàng, bạc hôm nay',
-          commodityList: metalsCommodities,
-          cacheKey: 'metals',
-          refreshTick: tick,
-        ),
-      4 => WeatherScreen(key: const ValueKey('weather'), refreshTick: tick),
+        );
+    return switch (id) {
+      'crop' => price('Giá nông sản hôm nay', commodities),
+      'livestock' => price('Giá vật nuôi hôm nay', livestockCommodities),
+      'inputs' => price('Giá vật tư đầu vào', inputCommodities),
+      'metals' => price('Giá vàng, bạc hôm nay', metalsCommodities),
+      'mine' => _myPrices(tick),
+      'weather' =>
+        WeatherScreen(key: const ValueKey('weather'), refreshTick: tick),
       _ => const AccountScreen(key: ValueKey('account')),
     };
   }
 
+  /// Tab "Giá của tôi" (chế độ đơn giản)
+  Widget _myPrices(int tick) {
+    final ids = appSettings.value.myCommodities;
+    final list = ids.map(findCommodity).whereType<Commodity>().toList();
+    if (list.isEmpty) {
+      return _ChooseMineHint(onChoose: () => openMyCommoditiesPicker(context));
+    }
+    return PriceScreen(
+      // đổi danh sách mặt hàng -> dựng lại và tải giá mới
+      key: ValueKey('mine:${ids.join(',')}'),
+      title: 'Giá của tôi hôm nay',
+      commodityList: list,
+      cacheKey: 'mine',
+      onDataLoaded: _khiTabDauTaiXong,
+      refreshTick: tick,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final tabs = _tabs;
     // Dựng sẵn các tab ĐÃ TỪNG MỞ và giữ chúng sống trong IndexedStack:
     // quay lại tab cũ là hiện ngay, không dựng lại, không mất vị trí cuộn,
     // bản đồ Windy cũng không phải tải lại.
     final body = IndexedStack(
       index: _index,
-      children: List.generate(
-        _titles.length,
-        (i) => _daMo.contains(i) ? _trangTab(i) : const SizedBox.shrink(),
-      ),
+      children: [
+        for (final t in tabs)
+          KeyedSubtree(
+            key: ValueKey('tab-${t.id}'),
+            child: _daMo.contains(t.id)
+                ? _trangTab(t.id)
+                : const SizedBox.shrink(),
+          ),
+      ],
     );
 
     final app = Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
+      appBar: AppBar(title: Text(tabs[_index].title)),
       body: body,
-      bottomNavigationBar: _BumpTabBar(index: _index, onTap: _onTabTap),
+      bottomNavigationBar:
+          _BumpTabBar(items: tabs, index: _index, onTap: _onTabTap),
     );
 
     // App LUÔN được dựng phía sau (StackFit.expand) để dữ liệu tải sẵn;
@@ -217,97 +286,138 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+/// Chế độ đơn giản nhưng chưa chọn mặt hàng nào
+class _ChooseMineHint extends StatelessWidget {
+  final VoidCallback onChoose;
+  const _ChooseMineHint({required this.onChoose});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 20),
+        const Center(child: Text('🌾', style: TextStyle(fontSize: 64))),
+        const SizedBox(height: 12),
+        const Text(
+          'Bác chưa chọn mặt hàng nào.\n'
+          'Chọn những thứ bác trồng, nuôi để xem giá nhanh ở đây.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: AppFont.big, height: 1.4),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: onChoose,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: const Text('➕ Chọn mặt hàng của tôi',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: AppFont.big,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white)),
+        ),
+      ],
+    );
+  }
+}
+
 /// THANH TAB DƯỚI với hiệu ứng "BÁN CUNG NỔI": tab đang chọn nhô hẳn lên
 /// thành hình tròn vượt qua đường kẻ trên của thanh, có bóng đổ — nhìn là
 /// biết ngay mình đang ở đâu, hợp với người cao tuổi.
 class _BumpTabBar extends StatelessWidget {
+  final List<_TabSpec> items;
   final int index;
   final ValueChanged<int> onTap;
-  const _BumpTabBar({required this.index, required this.onTap});
-
-  static const _items = [
-    ('🌱', 'Nông sản'),
-    ('🐓', 'Vật nuôi'),
-    ('🧪', 'Vật tư'),
-    ('🪙', 'Vàng bạc'),
-    ('⛅', 'Thời tiết'),
-    ('👤', 'Tôi'),
-  ];
+  const _BumpTabBar(
+      {required this.items, required this.index, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        // đường thẳng trên của thanh tab — bán cung sẽ nổi vượt qua nó
-        border: Border(top: BorderSide(color: AppColors.border, width: 1.5)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 76,
-          child: Row(
-            children: List.generate(_items.length, (i) {
-              final selected = i == index;
-              final (icon, label) = _items[i];
-              return Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onTap(i),
-                  child: Stack(
-                    clipBehavior: Clip.none, // cho phép nổi ra NGOÀI thanh
-                    alignment: Alignment.topCenter,
-                    children: [
-                      // nhãn chữ nằm sát đáy
-                      Positioned(
-                        bottom: 8,
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: selected ? 12.5 : 11.5,
-                            fontWeight:
-                                selected ? FontWeight.w900 : FontWeight.w600,
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.textMuted,
+    // Ít tab (chế độ đơn giản) thì chữ dưới biểu tượng to hẳn lên
+    final few = items.length <= 3;
+    final labelSize = few ? 16.0 : 11.5;
+    // Thanh tab cao cố định: 6 tab thì giữ cỡ chữ gốc (biểu tượng đã đủ
+    // to), 3 tab thì cho chữ to thêm
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: few ? 1.2 : 1.0,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          // đường thẳng trên của thanh tab — bán cung sẽ nổi vượt qua nó
+          border: Border(top: BorderSide(color: AppColors.border, width: 1.5)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 76,
+            child: Row(
+              children: List.generate(items.length, (i) {
+                final selected = i == index;
+                final icon = items[i].icon;
+                final label = items[i].label;
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onTap(i),
+                    child: Stack(
+                      clipBehavior: Clip.none, // cho phép nổi ra NGOÀI thanh
+                      alignment: Alignment.topCenter,
+                      children: [
+                        // nhãn chữ nằm sát đáy
+                        Positioned(
+                          bottom: 8,
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: selected ? labelSize + 1 : labelSize,
+                              fontWeight:
+                                  selected ? FontWeight.w900 : FontWeight.w600,
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.textMuted,
+                            ),
                           ),
                         ),
-                      ),
-                      // biểu tượng: chọn thì thành hình tròn NỔI BÁN CUNG
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeOutBack,
-                        top: selected ? -22 : 10,
-                        child: AnimatedContainer(
+                        // biểu tượng: chọn thì thành hình tròn NỔI BÁN CUNG
+                        AnimatedPositioned(
                           duration: const Duration(milliseconds: 250),
-                          width: selected ? 52 : 32,
-                          height: selected ? 52 : 32,
-                          alignment: Alignment.center,
-                          decoration: selected
-                              ? BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: AppColors.primary, width: 3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0x2E000000),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                )
-                              : null,
-                          child: Text(icon,
-                              style:
-                                  TextStyle(fontSize: selected ? 27 : 22)),
+                          curve: Curves.easeOutBack,
+                          top: selected ? -22 : 10,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            width: selected ? 52 : 32,
+                            height: selected ? 52 : 32,
+                            alignment: Alignment.center,
+                            decoration: selected
+                                ? BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: AppColors.primary, width: 3),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0x2E000000),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            child: Text(icon,
+                                style: TextStyle(fontSize: selected ? 27 : 22)),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ),
       ),

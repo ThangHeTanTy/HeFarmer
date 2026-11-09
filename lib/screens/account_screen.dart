@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/account_service.dart';
+import '../services/price_service.dart';
+import '../services/settings_service.dart';
 import '../services/vn_places.dart';
 import '../theme.dart';
+import 'my_commodities_screen.dart';
 
 /// Màn hình HỒ SƠ: tên để app chào, ảnh đại diện, và "Vị trí của tôi" —
 /// tab Thời tiết ưu tiên vị trí này thay GPS, tab Giá dùng nó để chọn ra
@@ -173,8 +176,8 @@ class _ProfileView extends StatelessWidget {
                     border: Border.all(color: AppColors.primary, width: 3),
                   ),
                   alignment: Alignment.center,
-                  child:
-                      Text(profile.avatar, style: const TextStyle(fontSize: 56)),
+                  child: Text(profile.avatar,
+                      style: const TextStyle(fontSize: 56)),
                 ),
                 Positioned(
                   right: 0,
@@ -242,8 +245,9 @@ class _ProfileView extends StatelessWidget {
                         home?.label ?? 'Chưa đặt — chạm để chọn nơi bạn ở',
                         style: TextStyle(
                             fontSize: AppFont.body,
-                            fontWeight:
-                                home != null ? FontWeight.w700 : FontWeight.w400,
+                            fontWeight: home != null
+                                ? FontWeight.w700
+                                : FontWeight.w400,
                             color: AppColors.text),
                       ),
                       const SizedBox(height: 2),
@@ -264,6 +268,8 @@ class _ProfileView extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 24),
+        const _DisplaySettings(),
         const SizedBox(height: 20),
         const Text(
           'Hồ sơ chỉ lưu trong máy này, không gửi đi đâu và không cần mật khẩu.',
@@ -272,6 +278,184 @@ class _ProfileView extends StatelessWidget {
               fontSize: AppFont.small, color: AppColors.textMuted, height: 1.4),
         ),
       ],
+    );
+  }
+}
+
+// ================== CÀI ĐẶT HIỂN THỊ ==================
+
+/// Cỡ chữ + chế độ đơn giản. Đổi là cả app cập nhật ngay.
+class _DisplaySettings extends StatelessWidget {
+  const _DisplaySettings();
+
+  Future<void> _toggleSimple(BuildContext context, bool on) async {
+    // Bật lần đầu mà chưa chọn mặt hàng nào -> mời chọn luôn
+    if (on && appSettings.value.myCommodities.isEmpty) {
+      await openMyCommoditiesPicker(context);
+    }
+    await setSimpleMode(on);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppSettings>(
+      valueListenable: appSettings,
+      builder: (context, st, _) {
+        final chosen =
+            st.myCommodities.map(findCommodity).whereType<Commodity>().toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ----- Cỡ chữ -----
+            const Text('🔠 Cỡ chữ',
+                style: TextStyle(
+                    fontSize: AppFont.big,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primary)),
+            const SizedBox(height: 8),
+            Row(children: [
+              for (final (label, scale) in textScaleChoices) ...[
+                Expanded(
+                  child: _ScaleButton(
+                    label: label,
+                    scale: scale,
+                    selected: st.textScale == scale,
+                    onTap: () => setTextScale(scale),
+                  ),
+                ),
+                if (scale != textScaleChoices.last.$2) const SizedBox(width: 8),
+              ],
+            ]),
+            const SizedBox(height: 6),
+            const Text(
+              'Chữ trong cả ứng dụng sẽ to lên ngay. Chọn mức nào bác đọc '
+              'thoải mái nhất.',
+              style: TextStyle(
+                  fontSize: AppFont.small,
+                  color: AppColors.textMuted,
+                  height: 1.3),
+            ),
+            const SizedBox(height: 22),
+
+            // ----- Chế độ đơn giản -----
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+              decoration: BoxDecoration(
+                color: st.simpleMode ? AppColors.primaryLight : AppColors.card,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: st.simpleMode ? AppColors.primary : AppColors.border,
+                    width: st.simpleMode ? 2 : 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    const Text('🧓', style: TextStyle(fontSize: 30)),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text('Chế độ đơn giản',
+                          style: TextStyle(
+                              fontSize: AppFont.big,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.text)),
+                    ),
+                    Transform.scale(
+                      scale: 1.25,
+                      child: Switch(
+                        value: st.simpleMode,
+                        activeTrackColor: AppColors.primary,
+                        onChanged: (v) => _toggleSimple(context, v),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Chỉ còn 3 mục: Giá của tôi, Thời tiết và Tôi. '
+                    'Tab "Giá của tôi" chỉ hiện những thứ bác chọn.',
+                    style: TextStyle(
+                        fontSize: AppFont.small,
+                        color: AppColors.textMuted,
+                        height: 1.35),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => openMyCommoditiesPicker(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
+                      side:
+                          const BorderSide(color: AppColors.primary, width: 2),
+                      alignment: Alignment.centerLeft,
+                    ),
+                    child: Text(
+                      chosen.isEmpty
+                          ? '➕ Chọn mặt hàng của tôi'
+                          : '✏️ Mặt hàng của tôi: '
+                              '${chosen.map((c) => '${c.icon} ${c.name}').join(', ')}',
+                      style: const TextStyle(
+                          fontSize: AppFont.body,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Nút chọn cỡ chữ — chữ "Aa" trên nút có đúng cỡ sẽ hiển thị
+class _ScaleButton extends StatelessWidget {
+  final String label;
+  final double scale;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ScaleButton({
+    required this.label,
+    required this.scale,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primary : AppColors.card,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: selected ? AppColors.primary : AppColors.border,
+                width: 2),
+          ),
+          child: Column(children: [
+            // Cố định cỡ để 3 nút so sánh được với nhau
+            Text('Aa',
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(
+                    fontSize: 22 * scale,
+                    fontWeight: FontWeight.w900,
+                    color: selected ? Colors.white : AppColors.text)),
+            FittedBox(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: AppFont.small,
+                      fontWeight: FontWeight.w800,
+                      color: selected ? Colors.white : AppColors.textMuted)),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }
@@ -338,7 +522,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   Widget _tile(PlaceSuggestion p, {required bool online}) {
     return ListTile(
-      leading: Text(online ? '🔎' : '🏙️', style: const TextStyle(fontSize: 26)),
+      leading:
+          Text(online ? '🔎' : '🏙️', style: const TextStyle(fontSize: 26)),
       title: Text(p.name,
           style: const TextStyle(
               fontSize: AppFont.body,
@@ -382,8 +567,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       ),
                 border:
                     OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               ),
             ),
           ),

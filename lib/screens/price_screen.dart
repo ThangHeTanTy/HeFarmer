@@ -24,6 +24,14 @@ class PriceScreen extends StatefulWidget {
   /// dữ liệu đang hiển thị đã cũ (quá 10 phút) — nhờ vậy chuyển qua lại
   /// giữa các tab là hiện ngay, không bắt chờ.
   final int refreshTick;
+
+  /// Hàm tải giá — chỉ đổi trong test (mặc định: fetchAllPrices)
+  final Future<List<CommodityResult>> Function(List<Commodity> list,
+      {String? cacheKey})? loadPrices;
+
+  /// Đọc "Vị trí của tôi" — chỉ đổi trong test (mặc định: getHomeLocation)
+  final Future<HomeLocation?> Function()? loadHome;
+
   const PriceScreen({
     super.key,
     this.title = 'Giá nông sản hôm nay',
@@ -31,6 +39,8 @@ class PriceScreen extends StatefulWidget {
     this.cacheKey = 'crop',
     this.onDataLoaded,
     this.refreshTick = 0,
+    this.loadPrices,
+    this.loadHome,
   });
 
   @override
@@ -77,7 +87,7 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 
   Future<void> _loadHome() async {
-    final h = await getHomeLocation();
+    final h = await (widget.loadHome ?? getHomeLocation)();
     if (mounted) setState(() => _home = h);
   }
 
@@ -95,7 +105,7 @@ class _PriceScreenState extends State<PriceScreen> {
     }
     // 2) Tải dữ liệu mới (các mặt hàng chạy song song)
     try {
-      final results = await fetchAllPrices(
+      final results = await (widget.loadPrices ?? fetchAllPrices)(
         widget.commodityList.isEmpty ? commodities : widget.commodityList,
         cacheKey: widget.cacheKey,
       );
@@ -461,11 +471,15 @@ class _PriceBox extends StatelessWidget {
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
       child: Column(children: [
-        Text(label,
-            style: TextStyle(
-                fontSize: AppFont.small,
-                fontWeight: FontWeight.w800,
-                color: color)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(label,
+              maxLines: 1,
+              style: TextStyle(
+                  fontSize: AppFont.small,
+                  fontWeight: FontWeight.w800,
+                  color: color)),
+        ),
         const SizedBox(height: 2),
         FittedBox(
           child: Text(value,
@@ -521,14 +535,14 @@ class _RegionTable extends StatelessWidget {
               ),
               Expanded(
                   flex: 14,
-                  child: Text(formatVnd(r.buy),
+                  child: _OneLineNumber(formatVnd(r.buy),
                       style: const TextStyle(
                           fontSize: AppFont.body,
                           fontWeight: FontWeight.w800,
                           color: AppColors.buy))),
               Expanded(
                   flex: 14,
-                  child: Text(formatVnd(r.sell),
+                  child: _OneLineNumber(formatVnd(r.sell),
                       style: const TextStyle(
                           fontSize: AppFont.body,
                           fontWeight: FontWeight.w800,
@@ -557,11 +571,17 @@ class _ChangeBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration:
           BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: AppFont.small,
-              fontWeight: FontWeight.w800,
-              color: color)),
+      // Nhãn luôn 1 dòng (chữ to quá thì tự thu nhỏ)
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(label,
+            maxLines: 1,
+            style: TextStyle(
+                fontSize: AppFont.small,
+                fontWeight: FontWeight.w800,
+                color: color)),
+      ),
     );
   }
 }
@@ -603,14 +623,14 @@ class _ThreeDayTable extends StatelessWidget {
                         color: AppColors.text))),
             Expanded(
                 flex: 16,
-                child: Text(formatVnd(d.avgBuy),
+                child: _OneLineNumber(formatVnd(d.avgBuy),
                     style: TextStyle(
                         fontSize: AppFont.body,
                         fontWeight: FontWeight.w800,
                         color: _colorFor(i, (x) => x.avgBuy)))),
             Expanded(
                 flex: 16,
-                child: Text(formatVnd(d.avgSell),
+                child: _OneLineNumber(formatVnd(d.avgSell),
                     style: TextStyle(
                         fontSize: AppFont.body,
                         fontWeight: FontWeight.w800,
@@ -738,6 +758,27 @@ class _LocalPriceBox extends StatelessWidget {
         ]),
         if (row.change != null) _ChangeBadge(change: row.change!),
       ]),
+    );
+  }
+}
+
+/// Con số giá luôn nằm trên MỘT dòng: chữ to quá thì tự thu nhỏ cho vừa ô,
+/// không bao giờ ngắt "98.50" / "0" khiến bác đọc nhầm.
+class _OneLineNumber extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  const _OneLineNumber(this.text, {required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    // chừa khoảng trống bên phải để 2 cột số không dính vào nhau
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(text, maxLines: 1, softWrap: false, style: style),
+      ),
     );
   }
 }
