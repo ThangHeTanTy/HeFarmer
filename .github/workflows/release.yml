@@ -1,0 +1,183 @@
+# Build APK, ký bằng khoá phát hành, rồi đăng lên GitHub Releases (giống HeDeck).
+#
+# - Đẩy thẻ phiên bản (v1.2.3, dùng PHAT_HANH.bat) -> chạy test, build, ký APK
+#   bằng khoá phát hành, đăng Release. App của bà con tự thấy bản mới.
+# - Chạy tay (Actions -> Phát hành -> Run workflow) -> chỉ build thử, không
+#   ký, không đăng gì. File build thử nằm ở mục Artifacts của lượt chạy.
+#
+# Cách phát hành và cài khoá ký: docs/PHAT_HANH.md
+
+name: Phát hành
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Số phiên bản
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.v.outputs.name }}
+      code: ${{ steps.v.outputs.code }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - id: v
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            name="${GITHUB_REF#refs/tags/v}"
+            if [[ ! "$name" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "::error::Thẻ phải có dạng v1.2.3, nhận được v$name"
+              exit 1
+            fi
+            # Android chỉ cho cài đè khi versionCode không giảm.
+            code=$(( BASH_REMATCH[1] * 1000000 + BASH_REMATCH[2] * 1000 + BASH_REMATCH[3] ))
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            name="dev"
+            code=1
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Phiên bản: $name ($code)"
+
+  apk:
+    name: APK Android
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.47.9"
+          cache: true
+
+      - run: flutter pub get
+
+      # Không phát hành bản đang hỏng test
+      - run: flutter test
+
+      - name: Build APK
+        env:
+          RELEASE: ${{ needs.version.outputs.release }}
+          NAME: ${{ needs.version.outputs.name }}
+          CODE: ${{ needs.version.outputs.code }}
+        run: |
+          extra=()
+          if [ "$RELEASE" = "true" ]; then
+            # App đọc HEFARMER_VERSION để so với bản mới nhất trên GitHub.
+            extra=(--build-name="$NAME" --build-number="$CODE"
+                   --dart-define=HEFARMER_VERSION="$NAME")
+          fi
+          # Lần build đầu Gradle tự tải NDK (vài trăm MB). Tải hỏng giữa chừng
+          # thì dọn phần dở và thử lại, thay vì làm hỏng cả lần phát hành.
+          for attempt in 1 2 3; do
+            # Giống BAO-MAT.md: làm rối mã Dart, giữ bảng đối chiếu riêng.
+            flutter build apk --release \
+              --obfuscate --split-debug-info=debug_symbols \
+              "${extra[@]}" && break
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            echo "::warning::Build APK hỏng lần $attempt, thử lại"
+            rm -rf "$ANDROID_HOME/.temp" "$ANDROID_HOME/ndk/.temp"
+            sleep 15
+          done
+
+      - name: Ký APK bằng khoá phát hành
+        if: needs.version.outputs.release == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          # Khoá theo BAO-MAT.md có thể đặt mật khẩu khoá khác mật khẩu kho
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'hefarmer' }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::Chưa có secret ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD. Chạy TAO_KHOA_KY.bat, xem docs/PHAT_HANH.md."
+            exit 1
+          fi
+          ks="$RUNNER_TEMP/release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$ks"
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          mkdir -p out
+          # Tên file không kèm số phiên bản, để link
+          # releases/latest/download/HeFarmer.apk luôn tải được bản mới nhất.
+          # Flutter ký sẵn bằng khoá debug; apksigner thay hẳn chữ ký đó.
+          "$bt/apksigner" sign \
+            --ks "$ks" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
+            --out out/HeFarmer.apk \
+            build/app/outputs/flutter-apk/app-release.apk
+          rm -f "$ks"
+          "$bt/apksigner" verify --print-certs out/HeFarmer.apk
+
+      - name: Gom APK build thử
+        if: needs.version.outputs.release != 'true'
+        run: |
+          mkdir -p out
+          cp build/app/outputs/flutter-apk/app-release.apk out/HeFarmer.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: out/*.apk
+          if-no-files-found: error
+
+      # Bảng đối chiếu để đọc lỗi (stack trace) từ bản đã phát hành. Không
+      # đính kèm vào Release, vì công khai nó thì làm rối mã cũng như không.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols
+          path: debug_symbols/
+          retention-days: 90
+
+  release:
+    name: Đăng Release
+    needs: [version, apk]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk
+          path: dist
+
+      - name: Ghi chú phát hành
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # checkout chỉ lấy commit, lấy lại thẻ để đọc được lời ghi chú.
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          notes=$(git tag -l --format='%(contents)' "$TAG" | sed '/-----BEGIN PGP/,$d')
+          [ -n "$notes" ] || notes=$(git log -1 --format=%B "$TAG")
+          {
+            printf '%s\n\n' "$notes"
+            # App chỉ hiện phần phía trên dòng --- này.
+            printf -- '---\n\n'
+            cat .github/release_body.md
+          } > notes.md
+          (cd dist && sha256sum * > SHA256SUMS.txt)
+          ls -l dist
+          cat notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: HeFarmer ${{ needs.version.outputs.name }}
+          body_path: notes.md
+          files: dist/*

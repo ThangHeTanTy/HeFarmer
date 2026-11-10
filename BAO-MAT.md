@@ -6,8 +6,9 @@
    xáo trộn cả mã Dart. Kẻ xấu mở APK ra chỉ thấy tên hàm vô nghĩa.
 2. CHỐNG SỬA APK / CHÈN QUYỀN TỪ BÊN NGOÀI: quyền của app nằm cố định trong
    AndroidManifest lúc build (Internet, Vị trí, Thông báo, tự chạy lại sau
-   khởi động máy). APK được KÝ SỐ bằng khóa riêng của bạn — ai sửa file APK (thêm quyền, chèn mã độc, gắn
-   quảng cáo) chữ ký sẽ vỡ, Android từ chối cài đè và người dùng phân biệt
+   khởi động máy, xin cài bản cập nhật). APK được KÝ SỐ bằng khóa riêng
+   của bạn — ai sửa file APK (thêm quyền, chèn mã độc, gắn quảng cáo) chữ
+   ký sẽ vỡ, Android từ chối cài đè và người dùng phân biệt
    được bản giả. Vì vậy PHẢI tạo khóa riêng (bước dưới), đừng dùng khóa debug.
 3. KHÓA THÊM: allowBackup=false (không cho trích xuất dữ liệu app qua sao lưu),
    usesCleartextTraffic=false (chặn mọi kết nối HTTP không mã hóa — app chỉ
@@ -47,3 +48,16 @@ mình để đọc log crash, KHÔNG kèm vào APK, không gửi ai.
 
 Ghi chú: `flutter run` hằng ngày vẫn hoạt động bình thường (chưa có
 key.properties thì tự dùng khóa debug, không ảnh hưởng lập trình).
+
+## Phát hành tự động trên GitHub (khuyên dùng)
+
+Không muốn build và gửi APK bằng tay? Nháy đúp `TAO_KHOA_KY.bat`: script
+**dùng lại đúng khoá ở Bước 1** (đọc `android/key.properties`), chép nó sang
+`%USERPROFILE%\HeFarmer-khoa-ky\` và dán vào GitHub Secrets. Từ đó mỗi lần
+chạy `PHAT_HANH.bat`, GitHub tự build, làm rối mã, **ký bằng khoá của bạn** và
+đăng Release; điện thoại đang cài bản bạn tự ký sẽ cài đè được, không mất dữ
+liệu. Xem [docs/PHAT_HANH.md](docs/PHAT_HANH.md).
+
+Lưu ý bảo mật: ai có quyền sửa Secrets hoặc workflow của kho mã thì ký được
+APK bằng khoá này — chỉ cấp quyền ghi cho người tin cậy.
+
