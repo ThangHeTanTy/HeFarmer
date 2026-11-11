@@ -9,7 +9,10 @@ tối giản, có nút đọc thành tiếng, và mọi con số đều kèm l�
 
 ## Tải về
 
-Trên điện thoại Android, mở bằng trình duyệt:
+**Trang tải: https://thanghetanty.github.io/HeFarmer/** — có hướng dẫn cài
+từng bước, hình ảnh app và mã QR. Gửi link này cho bà con là tiện nhất.
+
+Hoặc tải thẳng trên điện thoại Android:
 **[⬇️ Tải HeFarmer.apk](https://github.com/ThangHeTanTy/HeFarmer/releases/latest/download/HeFarmer.apk)**
 · [Các bản đã phát hành](https://github.com/ThangHeTanTy/HeFarmer/releases)
 
@@ -211,8 +214,10 @@ tool/
 .github/workflows/
 ├── prices.yml                    # máy chủ giá: 30 phút/lần -> nhánh `data`
 ├── ci.yml                        # analyze + test + build APK
-└── release.yml                   # thẻ v1.2.3 -> test, build, ký, đăng Release
+├── release.yml                   # thẻ v1.2.3 -> test, build, ký, đăng Release
+└── pages.yml                     # đăng trang tải site/ lên GitHub Pages
 PHAT_HANH.bat, TAO_KHOA_KY.bat    # phát hành / tạo khoá ký (Windows, tools/*.ps1)
+site/                             # trang tải (GitHub Pages, workflow pages.yml)
 ```
 
 ## Ghi chú kỹ thuật

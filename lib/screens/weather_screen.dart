@@ -13,7 +13,20 @@ class WeatherScreen extends StatefulWidget {
   /// Tăng lên mỗi lần bấm vào tab Thời tiết; chỉ tải lại khi dữ liệu đã cũ
   /// (quá 10 phút), nhờ vậy bản đồ Windy không phải vẽ lại mỗi lần chuyển tab.
   final int refreshTick;
-  const WeatherScreen({super.key, this.refreshTick = 0});
+
+  /// Chỉ đổi trong test: vị trí, dự báo, và tắt bản đồ Windy (WebView)
+  final Future<({DeviceLocation location, bool fromProfile})> Function()?
+      loadLocation;
+  final Future<WeatherData> Function(double lat, double lon)? loadWeather;
+  final bool showMap;
+
+  const WeatherScreen({
+    super.key,
+    this.refreshTick = 0,
+    this.loadLocation,
+    this.loadWeather,
+    this.showMap = true,
+  });
 
   @override
   State<WeatherScreen> createState() => _WeatherScreenState();
@@ -50,14 +63,18 @@ class _WeatherScreenState extends State<WeatherScreen> {
       _error = null;
     });
     try {
-      final pref = await getPreferredLocation();
+      final pref = await (widget.loadLocation ?? getPreferredLocation)();
       final loc = pref.location;
       _fromProfile = pref.fromProfile;
-      final w = await fetchWeather(loc.latitude, loc.longitude);
+      final w = await (widget.loadWeather ?? fetchWeather)(
+          loc.latitude, loc.longitude);
       if (!mounted) return;
-      final controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..loadRequest(Uri.parse(windyEmbedUrl(loc.latitude, loc.longitude)));
+      final controller = widget.showMap
+          ? (WebViewController()
+            ..setJavaScriptMode(JavaScriptMode.unrestricted)
+            ..loadRequest(
+                Uri.parse(windyEmbedUrl(loc.latitude, loc.longitude))))
+          : null;
       setState(() {
         _location = loc;
         _weather = w;
@@ -66,10 +83,10 @@ class _WeatherScreenState extends State<WeatherScreen> {
       });
     } catch (e) {
       if (mounted) {
-        setState(() => _error =
-            '${e.toString().replaceFirst('Exception: ', '')}\n\n'
-            'Mẹo: vào tab HỒ SƠ (Tôi) và đặt "Vị trí của tôi" — '
-            'app sẽ luôn lấy thời tiết tại đó, không cần bật GPS.');
+        setState(
+            () => _error = '${e.toString().replaceFirst('Exception: ', '')}\n\n'
+                'Mẹo: vào tab HỒ SƠ (Tôi) và đặt "Vị trí của tôi" — '
+                'app sẽ luôn lấy thời tiết tại đó, không cần bật GPS.');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -164,8 +181,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
       Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(14)),
+            color: AppColors.primary, borderRadius: BorderRadius.circular(14)),
         child: Column(children: [
           Text('${w.temperature}°C',
               style: const TextStyle(
@@ -264,8 +280,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: const BoxDecoration(
-                  border:
-                      Border(bottom: BorderSide(color: AppColors.border))),
+                  border: Border(bottom: BorderSide(color: AppColors.border))),
               child: Row(children: [
                 Expanded(
                     flex: 14,
@@ -273,9 +288,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
                         style: TextStyle(
                             fontSize: AppFont.body,
                             fontWeight: FontWeight.w800,
-                            color: i == 0
-                                ? AppColors.primary
-                                : AppColors.text))),
+                            color:
+                                i == 0 ? AppColors.primary : AppColors.text))),
                 Expanded(
                     flex: 16,
                     child: Text(d.desc,
@@ -330,8 +344,8 @@ class _WeatherScreenState extends State<WeatherScreen> {
       Text(
         'Dự báo: Open-Meteo (miễn phí) · Bản đồ: Windy.com · Cập nhật '
         '${w.updatedAt.hour.toString().padLeft(2, '0')}:${w.updatedAt.minute.toString().padLeft(2, '0')}',
-        style:
-            const TextStyle(fontSize: AppFont.small, color: AppColors.textMuted),
+        style: const TextStyle(
+            fontSize: AppFont.small, color: AppColors.textMuted),
       ),
     ];
   }

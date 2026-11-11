@@ -55,6 +55,27 @@ cần dán lại, hoặc sang máy khác sau khi chép thư mục khoá qua).
 
 ---
 
+## Việc làm một lần: bật trang tải
+
+Trang https://thanghetanty.github.io/HeFarmer/ dựng từ thư mục `site/` bằng
+workflow `.github/workflows/pages.yml` (giống HeDeck). GitHub chỉ cho bật bằng
+tay:
+
+1. Repo trên GitHub → **Settings** → **Pages** (cột trái).
+2. Mục **Build and deployment** → **Source**: chọn **GitHub Actions**.
+3. Tab **Actions** → **Trang tải** → **Run workflow** → **Run workflow**.
+   Khoảng một phút sau trang chạy ở địa chỉ trên.
+
+Trang tự hỏi GitHub bản phát hành mới nhất (số phiên bản, ngày, dung lượng,
+ghi chú "Có gì mới"), nên phát hành bản mới **không** cần đăng lại trang.
+Workflow chỉ tự chạy lại khi sửa `site/`. Ảnh app trong `site/images/` chụp
+từ app thật với dữ liệu mẫu; sửa giao diện nhiều thì nên chụp lại.
+
+Gửi bà con link trang thay vì link file APK: trang có hướng dẫn cài từng bước,
+mã QR cho người đang xem trên máy tính, và báo rõ khi mở bằng iPhone.
+
+---
+
 ## Mỗi lần phát hành
 
 1. Merge mọi thay đổi vào `main`, rồi trên máy: `git checkout main` và

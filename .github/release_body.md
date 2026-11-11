@@ -1,6 +1,8 @@
 ## Cài lần đầu
 
-Trên điện thoại Android, mở link sau bằng trình duyệt (Chrome, Cốc Cốc…):
+Trang tải có hướng dẫn từng bước: https://thanghetanty.github.io/HeFarmer/
+
+Hoặc trên điện thoại Android, mở link sau bằng trình duyệt (Chrome, Cốc Cốc…):
 
 **[Tải HeFarmer.apk](https://github.com/ThangHeTanTy/HeFarmer/releases/latest/download/HeFarmer.apk)**
 

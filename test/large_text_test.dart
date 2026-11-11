@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hefarmer/screens/account_screen.dart';
 import 'package:hefarmer/screens/my_commodities_screen.dart';
 import 'package:hefarmer/screens/price_screen.dart';
+import 'package:hefarmer/screens/weather_screen.dart';
 import 'package:hefarmer/services/account_service.dart';
 import 'package:hefarmer/services/price_parser.dart';
 import 'package:hefarmer/services/price_service.dart';
 import 'package:hefarmer/services/settings_service.dart';
 import 'package:hefarmer/services/updater.dart';
+import 'package:hefarmer/services/weather_service.dart';
 import 'package:hefarmer/widgets/update_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -127,6 +129,48 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('màn hình Thời tiết: rộng $width, chữ lớn nhất',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final now = DateTime.now();
+      await tester.pumpWidget(scaled(
+        maxTextScale,
+        Scaffold(
+          body: WeatherScreen(
+            showMap: false,
+            loadLocation: () async => (
+              location: const DeviceLocation(
+                  12.667, 108.038, 'Phường Buôn Ma Thuột, Đắk Lắk'),
+              fromProfile: true
+            ),
+            loadWeather: (lat, lon) async => WeatherData(
+              temperature: 36,
+              humidity: 90,
+              windSpeed: 45,
+              rainProbability: 80,
+              description: 'Dông kèm mưa đá nhẹ',
+              daily: [
+                for (var i = 0; i < 4; i++)
+                  DailyForecast(now.add(Duration(days: i)), 36, 24,
+                      i == 0 ? 80 : 5, 'Mưa rào rất to'),
+              ],
+              updatedAt: now,
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final f = find.text('Hôm nay nên làm gì?');
+      await tester.scrollUntilVisible(f, 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.drag(find.byType(ListView), const Offset(0, -3000));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('tab Tôi (cỡ chữ, chế độ đơn giản): rộng $width, chữ lớn nhất',
         (tester) async {
