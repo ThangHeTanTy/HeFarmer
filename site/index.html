@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HeFarmer — Giá nông sản & thời tiết cho bà con</title>
+<meta name="description" content="Ứng dụng Android miễn phí xem giá nông sản, vật nuôi, vật tư, vàng bạc và dự báo thời tiết kèm gợi ý việc nhà nông. Chữ to, đọc thành tiếng, dành cho người cao tuổi.">
+<meta property="og:title" content="HeFarmer — Giá nông sản & thời tiết cho bà con">
+<meta property="og:description" content="Xem giá cà phê, tiêu, cao su, heo hơi, vàng… và thời tiết, chữ to, đọc thành tiếng. Miễn phí, không quảng cáo.">
+<meta property="og:image" content="https://thanghetanty.github.io/HeFarmer/images/og.jpg">
+<meta property="og:url" content="https://thanghetanty.github.io/HeFarmer/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1B5E20">
+<link rel="icon" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Cùng bảng màu với app (lib/theme.dart): xanh lá đậm, tương phản cao */
+  :root {
+    --bg: #F4F8F2;
+    --surface: #FFFFFF;
+    --tile: #E8F5E9;
+    --line: #D8DED4;
+    --text: #111111;
+    --muted: #4A4A4A;
+    --primary: #1B5E20;
+    --primary-2: #2E7D32;
+    --on-primary: #FFFFFF;
+    --buy: #0D47A1;
+    --sell: #B35C00;
+    --up: #0B7A2F;
+    --down: #C62828;
+    --warn-bg: #FCEEDD;
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1510; --surface: #18201A; --tile: #1F2B21; --line: #2B3A2E;
+      --text: #EEF3EE; --muted: #A9B4AA; --primary: #66BB6A; --primary-2: #81C784;
+      --on-primary: #0B1A0C; --buy: #64B5F6; --sell: #FFB74D; --up: #66BB6A;
+      --down: #EF5350; --warn-bg: #3A2A14;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Be Vietnam Pro", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+    font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--primary); }
+  img { max-width: 100%; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  code { font-size: .92em; background: var(--tile); padding: 1px 6px; border-radius: 6px; }
+
+  /* Thanh trên cùng */
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent);
+           backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 10px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 21px; color: var(--text); text-decoration: none; }
+  .brand img { width: 38px; height: 38px; border-radius: 10px; }
+  .spacer { flex: 1; }
+  .nav a { color: var(--text); text-decoration: none; font-weight: 600; font-size: 16px; padding: 8px 10px; border-radius: 10px; }
+  .nav a:hover { background: var(--tile); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
+          background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 15px; text-decoration: none; }
+
+  /* Phần mở đầu */
+  .hero { padding-top: 48px; padding-bottom: 24px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  .eyebrow { display: inline-block; font-size: 15px; font-weight: 700; color: var(--primary);
+             background: var(--tile); padding: 5px 14px; border-radius: 999px; }
+  h1 { font-size: clamp(34px, 5.4vw, 54px); line-height: 1.12; margin: 16px 0 14px; letter-spacing: -0.02em; }
+  h1 em { font-style: normal; color: var(--primary); }
+  .lead { color: var(--muted); font-size: 20px; margin: 0 0 26px; max-width: 32em; }
+
+  .dl { display: flex; align-items: center; gap: 16px; padding: 18px 22px; border-radius: var(--radius);
+        background: var(--primary); color: var(--on-primary); text-decoration: none; max-width: 440px;
+        box-shadow: 0 12px 30px -12px color-mix(in srgb, var(--primary) 70%, transparent); transition: transform .15s; }
+  .dl:hover { transform: translateY(-2px); background: var(--primary-2); }
+  .dl svg { width: 44px; height: 44px; flex: none; }
+  .dl b { display: block; font-size: 22px; line-height: 1.25; }
+  .dl small { display: block; font-size: 15px; opacity: .9; }
+  .meta { margin-top: 14px; font-size: 16px; color: var(--muted); }
+  .notice { margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: var(--warn-bg);
+            color: var(--text); font-size: 16px; max-width: 440px; }
+
+  /* Khung điện thoại */
+  .phone { background: #111; border-radius: 34px; padding: 10px; box-shadow: 0 30px 70px -24px rgba(0,0,0,.45);
+           max-width: 340px; margin: 0 auto; }
+  .phone img { display: block; width: 100%; height: auto; border-radius: 26px; aspect-ratio: 360 / 740; object-fit: cover; object-position: top; }
+  .hero .phone { transform: rotate(2deg); }
+
+  /* Các mục */
+  section.wrap { padding-top: 56px; }
+  h2 { font-size: clamp(27px, 3.6vw, 36px); margin: 0 0 8px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 26px; font-size: 19px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .card .ic { width: 48px; height: 48px; border-radius: 13px; display: grid; place-items: center;
+              font-size: 26px; margin-bottom: 10px; background: var(--tile); }
+  .card h3 { margin: 0 0 4px; font-size: 19px; }
+  .card p { margin: 0; color: var(--muted); font-size: 17px; }
+
+  /* Ảnh chụp app */
+  .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .gallery figure { margin: 0; }
+  .gallery .phone { padding: 7px; border-radius: 26px; }
+  .gallery .phone img { border-radius: 20px; }
+  .gallery figcaption { text-align: center; margin-top: 10px; font-weight: 600; font-size: 16.5px; }
+
+  /* Các bước cài */
+  .steps { counter-reset: s; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .step { position: relative; padding-top: 62px; }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; top: 18px; left: 20px;
+                  width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: var(--on-primary);
+                  display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+  .qr { display: flex; gap: 22px; align-items: center; margin-top: 14px; }
+  .qr img { width: 150px; height: 150px; border-radius: 12px; background: #fff; padding: 6px; flex: none; }
+
+  /* Hướng dẫn sử dụng */
+  .guide { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .guide .card h3 { font-size: 20px; margin-bottom: 8px; }
+  .guide ul { margin: 0; padding-left: 0; list-style: none; }
+  .guide li { padding: 7px 0; border-top: 1px dashed var(--line); color: var(--muted); font-size: 17px; }
+  .guide li:first-child { border-top: 0; }
+  .guide li b { color: var(--text); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
+  .tabs span { background: var(--tile); border-radius: 999px; padding: 4px 12px; font-size: 16px; font-weight: 600; }
+  .c-buy { color: var(--buy); font-weight: 700; }
+  .c-sell { color: var(--sell); font-weight: 700; }
+  .c-up { color: var(--up); font-weight: 700; }
+  .c-down { color: var(--down); font-weight: 700; }
+
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 700; font-size: 18.5px; }
+  details p { color: var(--muted); margin: 10px 0 2px; }
+  .notes { white-space: pre-line; }
+
+  .disclaimer { margin-top: 18px; color: var(--muted); font-size: 16px; }
+
+  footer { margin-top: 60px; border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--muted); font-size: 16px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+  footer a { color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding-top: 30px; gap: 34px; }
+    .hero .phone { transform: none; max-width: 300px; }
+    .grid, .steps { grid-template-columns: 1fr 1fr; }
+    .guide { grid-template-columns: 1fr; }
+    .gallery { grid-template-columns: repeat(4, 70%); overflow-x: auto; scroll-snap-type: x mandatory;
+               padding-bottom: 10px; }
+    .gallery figure { scroll-snap-align: center; }
+    .qr-desktop { display: none; }
+  }
+  @media (max-width: 560px) {
+    .grid, .steps { grid-template-columns: 1fr; }
+    .nav .hide-sm { display: none; }
+    .lead { font-size: 18.5px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#"><img src="images/logo.png" alt="">HeFarmer</a>
+    <span class="spacer"></span>
+    <nav class="nav">
+      <a class="hide-sm" href="#tinh-nang">Tính năng</a>
+      <a class="hide-sm" href="#huong-dan">Hướng dẫn</a>
+    </nav>
+    <a class="pill" href="#tai-ve">⬇ Tải app</a>
+  </div>
+</header>
+
+<main>
+<div class="wrap hero" id="tai-ve">
+  <div>
+    <span class="eyebrow">Miễn phí · Không quảng cáo · Không cần tài khoản</span>
+    <h1>Giá nông sản &amp; thời tiết <em>cho bà con</em></h1>
+    <p class="lead">Xem giá cà phê, tiêu, cao su, heo hơi, phân bón, vàng bạc mỗi ngày, cùng dự báo thời tiết kèm lời khuyên <b>“Hôm nay nên làm gì?”</b>. Chữ to, có nút đọc thành tiếng — làm riêng cho người cao tuổi.</p>
+
+    <a class="dl" id="dl-android" href="https://github.com/ThangHeTanTy/HeFarmer/releases/latest/download/HeFarmer.apk">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>
+      <span><b>Tải cho Android</b><small>Android 7.0 trở lên<span id="size"></span></small></span>
+    </a>
+    <p class="meta">
+      <span id="version"></span>
+      <a href="https://github.com/ThangHeTanTy/HeFarmer/releases">Các bản đã phát hành</a>
+    </p>
+    <p class="notice" id="not-android" hidden>
+      📱 HeFarmer chạy trên <b>điện thoại Android</b>. Bác đang xem trên máy khác —
+      <span id="not-android-hint">mở trang này trên điện thoại Android để tải.</span>
+    </p>
+    <p class="notice" id="no-release" hidden>
+      ⏳ Bản đầu tiên đang được chuẩn bị. Bác quay lại sau ít hôm nhé.
+    </p>
+  </div>
+  <div class="phone"><img src="images/gia.webp" alt="Màn hình giá nông sản: ô Gần nhà bác hiện giá cà phê Đắk Lắk, bảng giá theo vùng" width="360" height="740"></div>
+</div>
+
+<section class="wrap" id="tinh-nang">
+  <h2>Làm được gì</h2>
+  <p class="sub">Mọi con số đều kèm lời giải thích, không phải tự nhẩm.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🌱</div><h3>Giá nông sản</h3><p>Mủ cao su (theo độ TSC), cà phê nhân xô, hồ tiêu, ngô, khoai lang, khoai mì, đậu phộng, đậu nành.</p></div>
+    <div class="card"><div class="ic">🐓</div><h3>Giá vật nuôi</h3><p>Heo hơi theo miền, gà, vịt, ngan, trứng (đồng/quả), bò và dê hơi.</p></div>
+    <div class="card"><div class="ic">🧪</div><h3>Giá vật tư</h3><p>Phân bón (Ure, DAP, Kali, NPK) và thức ăn chăn nuôi — thấy được cả hai đầu lãi lỗ.</p></div>
+    <div class="card"><div class="ic">🪙</div><h3>Vàng, bạc</h3><p>SJC, PNJ, DOJI, Bảo Tín, bạc miếng. Giá thế giới tự đổi sang đồng/lượng, không phải nhẩm USD.</p></div>
+    <div class="card"><div class="ic">⛅</div><h3>Thời tiết + việc nên làm</h3><p>Mưa, gió, nắng 4 ngày tới, dịch thành lời khuyên: có nên phơi nông sản, phun thuốc, bón phân không.</p></div>
+    <div class="card"><div class="ic">📍</div><h3>Giá gần nhà</h3><p>Đặt nơi ở một lần, app hiện trước giá ở vùng gần nhà nhất, không chỉ số trung bình cả nước.</p></div>
+    <div class="card"><div class="ic">🔔</div><h3>Báo giá</h3><p>Đặt mức mong muốn, app tự kiểm tra và báo ra màn hình khi giá hôm nay chạm mức.</p></div>
+    <div class="card"><div class="ic">🔊</div><h3>Đọc thành tiếng</h3><p>Đọc giá đúng cách nói dân gian: “chín mươi tám nghìn năm trăm đồng một ký”.</p></div>
+    <div class="card"><div class="ic">🧮</div><h3>Tính tiền, biểu đồ</h3><p>Nhập số ký ra ngay thành tiền. Biểu đồ giá 30 ngày đến 3 năm để chọn lúc bán.</p></div>
+    <div class="card"><div class="ic">🔠</div><h3>Chữ to, chế độ đơn giản</h3><p>Ba mức cỡ chữ. Chế độ đơn giản chỉ còn 3 mục: Giá của tôi, Thời tiết, Tôi.</p></div>
+    <div class="card"><div class="ic">🔄</div><h3>Tự cập nhật</h3><p>App tự báo khi có bản mới, bấm một nút là cập nhật, không mất dữ liệu.</p></div>
+    <div class="card"><div class="ic">🔒</div><h3>Riêng tư</h3><p>Không tài khoản, không quảng cáo, không theo dõi. Mọi thứ của bác chỉ nằm trong máy.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="anh">
+  <h2>Hình ảnh app</h2>
+  <p class="sub">Chữ to, màu rõ: <span class="c-buy">xanh dương là giá mua</span>, <span class="c-sell">cam là giá bán</span>, <span class="c-up">▲ xanh lá là tăng</span>, <span class="c-down">▼ đỏ là giảm</span>.</p>
+  <div class="gallery">
+    <figure><div class="phone"><img src="images/gia.webp" alt="Bảng giá cà phê, có ô giá gần nhà" loading="lazy" width="360" height="740"></div><figcaption>Giá gần nhà bác</figcaption></figure>
+    <figure><div class="phone"><img src="images/thoitiet.webp" alt="Thời tiết và gợi ý Hôm nay nên làm gì" loading="lazy" width="360" height="740"></div><figcaption>Hôm nay nên làm gì?</figcaption></figure>
+    <figure><div class="phone"><img src="images/bieudo.webp" alt="Biểu đồ giá cà phê 30 ngày" loading="lazy" width="360" height="740"></div><figcaption>Biểu đồ giá</figcaption></figure>
+    <figure><div class="phone"><img src="images/toi.webp" alt="Tab Tôi: chọn cỡ chữ và chế độ đơn giản" loading="lazy" width="360" height="740"></div><figcaption>Chữ to, chế độ đơn giản</figcaption></figure>
+  </div>
+</section>
+
+<section class="wrap" id="cai-dat">
+  <h2>Cài trong 3 bước</h2>
+  <p class="sub">Làm trên điện thoại Android, mất chừng 2 phút.</p>
+  <div class="steps">
+    <div class="card step"><h3>Tải file về</h3><p>Bấm nút <b>Tải cho Android</b> ở đầu trang. Trình duyệt hỏi có tải không thì bấm <b>Tải xuống</b>.</p></div>
+    <div class="card step"><h3>Mở file và cài</h3><p>Bấm vào file <code>HeFarmer.apk</code> vừa tải. Điện thoại hỏi có cho trình duyệt cài ứng dụng không thì bật <b>Cho phép</b>, rồi bấm <b>Cài đặt</b>. Play Protect hỏi thì chọn <b>Vẫn cài đặt</b>.</p></div>
+    <div class="card step"><h3>Đặt nơi ở</h3><p>Mở app, vào mục <b>Tôi</b> (góc phải dưới) → <b>Vị trí của tôi</b>, gõ tên tỉnh hoặc xã. Từ đó thời tiết và giá gần nhà tự đúng chỗ, không cần bật GPS.</p></div>
+  </div>
+  <div class="card qr qr-desktop">
+    <img src="images/qr.png" alt="Mã QR mở trang tải HeFarmer" width="150" height="150">
+    <div>
+      <h3 style="margin:0 0 4px">Đang xem trên máy tính?</h3>
+      <p style="margin:0;color:var(--muted)">Mở Camera hoặc Zalo trên điện thoại, quét mã này để mở trang và tải app ngay trên điện thoại.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="huong-dan">
+  <h2>Hướng dẫn sử dụng</h2>
+  <p class="sub">Thanh dưới cùng có 6 mục, chạm vào mục nào thì mở mục đó.</p>
+  <div class="tabs" style="margin-bottom:18px">
+    <span>🌱 Nông sản</span><span>🐓 Vật nuôi</span><span>🧪 Vật tư</span><span>🪙 Vàng bạc</span><span>⛅ Thời tiết</span><span>👤 Tôi</span>
+  </div>
+  <div class="guide">
+    <div class="card">
+      <h3>📋 Đọc bảng giá</h3>
+      <ul>
+        <li><b>📍 Gần nhà bác</b>: giá ở vùng gần nơi bác đã đặt nhất, hiện to trên cùng.</li>
+        <li><b>Giá mua TB / Giá bán TB</b>: giá trung bình của các vùng.</li>
+        <li>Bảng <b>Khu vực</b>: giá từng tỉnh, vùng gần nhà được tô nền và đưa lên đầu.</li>
+        <li>Bảng <b>3 ngày gần nhất</b>: dòng dưới cùng là ngày mới nhất.</li>
+        <li><b>⏰ Đây là giá ngày…</b>: hôm nay nguồn chưa cập nhật, app hiện giá gần nhất và ghi rõ ngày.</li>
+        <li><b>Kéo màn hình xuống</b> để tải lại giá mới.</li>
+        <li><b>Chạm tên mặt hàng</b> để gấp thẻ lại cho gọn; app nhớ cho lần sau.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>👆 Các nút trên mỗi thẻ giá</h3>
+      <ul>
+        <li><b>🔊 Loa</b>: đọc to giá cho bác nghe.</li>
+        <li><b>🧮 Tính tiền</b>: nhập số ký → ra thành tiền chữ to, kèm đọc chữ “khoảng 113 triệu 760 nghìn đồng”.</li>
+        <li><b>📈 Biểu đồ</b>: giá lên hay xuống trong 30 ngày, 6 tháng, 1 năm, 3 năm.</li>
+        <li><b>🔔 Báo giá</b>: đặt mức (ví dụ cà phê vượt 100.000đ) — app báo ra màn hình khi giá hôm nay chạm mức, bác không cần mở app.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⛅ Thời tiết</h3>
+      <ul>
+        <li>Nhiệt độ, độ ẩm, gió, <b>khả năng mưa</b> hôm nay và 4 ngày tới.</li>
+        <li><b>Hôm nay nên làm gì?</b> — ví dụ: “Không nên phơi nông sản hôm nay”, “Hoãn phun thuốc — gió mạnh”, “Sắp có 3 ngày ráo, thuận lợi thu hoạch”.</li>
+        <li>Bản đồ mây mưa ở cuối trang, kéo và phóng to được.</li>
+        <li>Dự báo lấy theo <b>Vị trí của tôi</b>; chưa đặt thì app hỏi GPS.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>👤 Mục Tôi</h3>
+      <ul>
+        <li><b>Tên và ảnh</b>: để app chào bác mỗi lần mở.</li>
+        <li><b>Vị trí của tôi</b>: chọn trong 34 tỉnh, thành hoặc gõ tên xã.</li>
+        <li><b>🔠 Cỡ chữ</b>: Vừa, To, Rất to — đổi là cả app to lên ngay.</li>
+        <li><b>🧓 Chế độ đơn giản</b>: chỉ còn 3 mục. Chọn những thứ bác trồng, nuôi, mục <b>Giá của tôi</b> chỉ hiện đúng những thứ đó.</li>
+        <li><b>🔄 Kiểm tra cập nhật</b> và số phiên bản đang dùng.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="disclaimer">⚠️ Giá lấy từ các trang giá uy tín cập nhật hằng ngày, chỉ mang tính tham khảo — có thể chênh lệch với đại lý tại địa phương.</p>
+</section>
+
+<section class="wrap" id="hoi-dap">
+  <h2>Câu hỏi thường gặp</h2>
+  <details id="whatsnew" hidden><summary>Có gì mới trong bản này?</summary><p class="notes" id="notes"></p></details>
+  <details><summary>Điện thoại báo “Ứng dụng có thể không an toàn” — có sao không?</summary><p>Không sao. Cảnh báo hiện vì app không tải từ Google Play, không phải vì có virus. Mã nguồn công khai trên GitHub và file do GitHub tự build từ mã nguồn đó. Bấm <b>Vẫn cài đặt</b> (hoặc <b>Chi tiết → Vẫn cài đặt</b>).</p></details>
+  <details><summary>Tại sao không có trên Google Play?</summary><p>HeFarmer do một người làm và phát hành miễn phí. Cài file APK vẫn nhận cập nhật bình thường: app tự báo khi có bản mới, hoặc vào <b>Tôi → Kiểm tra cập nhật</b>.</p></details>
+  <details><summary>Cập nhật có mất dữ liệu không?</summary><p>Không. Hồ sơ, vị trí, cảnh báo giá và lịch sử giá đều giữ nguyên. Chỉ khi <b>gỡ app</b> thì mới mất.</p></details>
+  <details><summary>App có tốn nhiều 3G không?</summary><p>Rất ít. App tải một file giá gọn đã tổng hợp sẵn, chỉ tải lại khi giá đã cũ hơn 10 phút hoặc khi bác kéo xuống làm mới.</p></details>
+  <details><summary>Đặt báo giá rồi mà báo trễ hoặc không báo?</summary><p>Một số điện thoại (Xiaomi, Oppo, Vivo…) tiết kiệm pin rất mạnh, chặn app chạy ngầm. Vào <b>Cài đặt → Pin → HeFarmer</b> chọn <b>Không hạn chế</b>. App cũng chỉ báo theo giá <b>của hôm nay</b>, không báo theo giá cũ.</p></details>
+  <details><summary>Dùng được trên iPhone không?</summary><p>Hiện chỉ có cho điện thoại Android (Android 7.0 trở lên).</p></details>
+  <details><summary>App có lấy thông tin cá nhân của tôi không?</summary><p>Không. App không cần tài khoản, không có quảng cáo, không theo dõi. Tên, vị trí và cảnh báo của bác chỉ nằm trong máy. App chỉ <b>tải về</b> giá và thời tiết, không gửi gì đi.</p></details>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© Hề IT · HeFarmer</span>
+    <a href="https://github.com/ThangHeTanTy/HeFarmer">Mã nguồn</a>
+    <a href="https://github.com/ThangHeTanTy/HeFarmer/releases">Các bản phát hành</a>
+    <a href="https://github.com/ThangHeTanTy/HeFarmer#readme">Hướng dẫn chi tiết</a>
+    <a href="https://github.com/ThangHeTanTy/HeFarmer/issues">Báo lỗi, góp ý</a>
+    <span>Biểu tượng: <a href="https://github.com/jdecked/twemoji">Twemoji</a> (CC-BY 4.0)</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var REPO = "ThangHeTanTy/HeFarmer";
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+
+  // Không phải Android thì nói rõ, đừng để bác tải file không cài được
+  if (!isAndroid) {
+    document.getElementById("not-android").hidden = false;
+    if (/iPhone|iPad|iPod/i.test(ua)) {
+      document.getElementById("not-android-hint").textContent =
+        "hiện chưa có bản cho iPhone, iPad.";
+    } else {
+      document.getElementById("not-android-hint").innerHTML =
+        'quét <a href="#cai-dat">mã QR bên dưới</a> bằng điện thoại Android để tải.';
+    }
+  }
+
+  // Hỏi GitHub bản mới nhất: số phiên bản, ngày, dung lượng, ghi chú.
+  // Hỏng mạng thì nút tải vẫn dùng link cố định .../releases/latest/download/...
+  fetch("https://api.github.com/repos/" + REPO + "/releases/latest")
+    .then(function (r) {
+      if (r.status === 404) {
+        // Chưa phát hành bản nào: link tải cố định sẽ báo lỗi, nói trước cho rõ
+        document.getElementById("no-release").hidden = false;
+        document.getElementById("dl-android").href = "https://github.com/" + REPO + "/releases";
+        return null;
+      }
+      return r.ok ? r.json() : null;
+    })
+    .then(function (rel) {
+      if (!rel || !rel.assets) return;
+      var apk = rel.assets.filter(function (a) { return /\.apk$/i.test(a.name); })[0];
+      if (apk) {
+        document.getElementById("dl-android").href = apk.browser_download_url;
+        document.getElementById("size").textContent = " · " + Math.max(1, Math.round(apk.size / 1048576)) + " MB";
+      }
+      var d = new Date(rel.published_at);
+      document.getElementById("version").textContent =
+        "Bản " + rel.tag_name.replace(/^v/, "") + " · " + d.toLocaleDateString("vi-VN") + " ·";
+      var notes = (rel.body || "").split(/^---\s*$/m)[0].trim();
+      if (notes) {
+        document.getElementById("notes").textContent = notes;
+        document.getElementById("whatsnew").hidden = false;
+      }
+    })
+    .catch(function () {});
+})();
+</script>
+</body>
+</html>

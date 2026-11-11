@@ -217,7 +217,11 @@ class PriceChartBody extends StatelessWidget {
         height: 190,
         width: double.infinity,
         child: CustomPaint(
-          painter: _ChartPainter(points: points, color: color),
+          painter: _ChartPainter(
+              points: points,
+              color: color,
+              // Nhãn ngày dùng cùng font với chữ trong app
+              labelFont: DefaultTextStyle.of(context).style),
         ),
       ),
       const SizedBox(height: 6),
@@ -232,7 +236,9 @@ class PriceChartBody extends StatelessWidget {
 class _ChartPainter extends CustomPainter {
   final List<DaySummary> points;
   final Color color;
-  _ChartPainter({required this.points, required this.color});
+  final TextStyle labelFont;
+  _ChartPainter(
+      {required this.points, required this.color, required this.labelFont});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -315,7 +321,7 @@ class _ChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
             text: label,
-            style: const TextStyle(
+            style: labelFont.copyWith(
                 fontSize: 13,
                 color: AppColors.textMuted,
                 fontWeight: FontWeight.w600)),
