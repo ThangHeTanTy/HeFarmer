@@ -1,0 +1,838 @@
+{
+  "generatedAt": "2026-11-14T16:42:59.365343Z",
+  "day": "2026-11-14",
+  "ok": 10,
+  "total": 17,
+  "usdVnd": 25735.189593,
+  "commodities": [
+    {
+      "id": "caosu",
+      "name": "Mủ cao su",
+      "ok": true,
+      "source": "banggianongsan.com",
+      "rows": 2,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "banggianongsan.com",
+          "url": "https://banggianongsan.com/bang-gia-cao-su-hom-nay/",
+          "rows": 2,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "caphe",
+      "name": "Cà phê nhân xô",
+      "ok": true,
+      "source": "giacaphe.com",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "giacaphe.com",
+          "url": "https://giacaphe.com/gia-ca-phe-noi-dia/",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "hotieu",
+      "name": "Hồ tiêu",
+      "ok": true,
+      "source": "giatieu.com",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "giatieu.com",
+          "url": "https://giatieu.com/",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "ngo",
+      "name": "Ngô (bắp)",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "Không bóc được dữ liệu — đã thử: nhabeagri.com, hanghoa.anfin.vn, thuonggiaonline.vn, vietnambiz.vn, webgia.com",
+      "attempts": [
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-ngo-moi-nhat/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "hanghoa.anfin.vn",
+          "url": "https://hanghoa.anfin.vn/gia-thi-truong/ngo/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-nong-san.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "webgia.com",
+          "url": "https://webgia.com/gia-hang-hoa/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        }
+      ]
+    },
+    {
+      "id": "khoailang",
+      "name": "Khoai lang",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "Không bóc được dữ liệu — đã thử: nhabeagri.com, thuonggiaonline.vn, vietnambiz.vn, webgia.com",
+      "attempts": [
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-khoai-lang-moi-nhat/",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-nong-san.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "webgia.com",
+          "url": "https://webgia.com/gia-hang-hoa/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        }
+      ]
+    },
+    {
+      "id": "khoaimi",
+      "name": "Khoai mì (sắn)",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "Không bóc được dữ liệu — đã thử: nhabeagri.com, nhabeagri.com, thuonggiaonline.vn, vietnambiz.vn, webgia.com",
+      "attempts": [
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-khoai-mi-moi-nhat/",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-san-moi-nhat/",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-san.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "webgia.com",
+          "url": "https://webgia.com/gia-hang-hoa/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        }
+      ]
+    },
+    {
+      "id": "dauphong",
+      "name": "Đậu phộng (lạc)",
+      "ok": true,
+      "source": "vietnambiz.vn",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-dau-phong-moi-nhat/",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-nong-san.html",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "daunanh",
+      "name": "Đậu nành (đậu tương)",
+      "ok": true,
+      "source": "vietnambiz.vn",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "nhabeagri.com",
+          "url": "https://nhabeagri.com/gia-nong-san/gia-dau-tuong-moi-nhat/",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "hanghoa.anfin.vn",
+          "url": "https://hanghoa.anfin.vn/gia-thi-truong/dau-tuong/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-nong-san.html",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "heohoi",
+      "name": "Heo hơi",
+      "ok": true,
+      "source": "vietnambiz.vn",
+      "rows": 2,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-heo-hoi.html",
+          "rows": 2,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "ga",
+      "name": "Gà thịt",
+      "ok": true,
+      "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "vit",
+      "name": "Vịt, ngan",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "HTTP 404 — đã thử: Tạp chí Chăn nuôi VN (giá tại trại), channuoivietnam.com, vietnambiz.vn, thuonggiaonline.vn",
+      "attempts": [
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "channuoivietnam.com",
+          "url": "https://channuoivietnam.com/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-gia-cam.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        }
+      ]
+    },
+    {
+      "id": "trung",
+      "name": "Trứng",
+      "ok": true,
+      "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+      "rows": 2,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 2,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "bode",
+      "name": "Bò, dê hơi",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "HTTP 404 — đã thử: Tạp chí Chăn nuôi VN (giá tại trại), channuoivietnam.com, thuonggiaonline.vn",
+      "attempts": [
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "channuoivietnam.com",
+          "url": "https://channuoivietnam.com/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        }
+      ]
+    },
+    {
+      "id": "phanbon",
+      "name": "Phân bón",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "Không bóc được dữ liệu — đã thử: 2nong.vn, vietnambiz.vn, thuonggiaonline.vn, webgia.com",
+      "attempts": [
+        {
+          "source": "2nong.vn",
+          "url": "https://2nong.vn/gia-phan-bon",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-phan-bon.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "webgia.com",
+          "url": "https://webgia.com/gia-hang-hoa/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        }
+      ]
+    },
+    {
+      "id": "thucanchannuoi",
+      "name": "Thức ăn chăn nuôi",
+      "ok": false,
+      "source": null,
+      "rows": 0,
+      "lastGoodDay": null,
+      "error": "HTTP 404 — đã thử: Tạp chí Chăn nuôi VN (giá tại trại), channuoivietnam.com, vietnambiz.vn, thuonggiaonline.vn",
+      "attempts": [
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-14-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-13-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-12-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-11-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-10-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-09-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nguoichannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HTTP 500"
+        },
+        {
+          "source": "Tạp chí Chăn nuôi VN (giá tại trại)",
+          "url": "https://nhachannuoi.vn/gia-san-pham-chan-nuoi-gia-tai-trai-ca-nuoc-ngay-08-11-2026/",
+          "rows": 0,
+          "error": "HandshakeHandshake error in client (OS Error: \n\tCERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate(handshake.cc:319))"
+        },
+        {
+          "source": "channuoivietnam.com",
+          "url": "https://channuoivietnam.com/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-nguyen-lieu-thuc-an-chan-nuoi.html",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "thuonggiaonline.vn",
+          "url": "https://thuonggiaonline.vn/gia-nong-san",
+          "rows": 0,
+          "error": "HTTP 404"
+        }
+      ]
+    },
+    {
+      "id": "vang",
+      "name": "Vàng",
+      "ok": true,
+      "source": "vietnambiz.vn",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "vang.today (SJC, PNJ, DOJI, Bảo Tín)",
+          "url": "https://www.vang.today/api/prices",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "sjc.com.vn (chính thức)",
+          "url": "https://sjc.com.vn/xml/tygiavang.xml",
+          "rows": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "source": "sjc.com.vn (dự phòng)",
+          "url": "http://www.sjc.com.vn/xml/tygiavang.xml",
+          "rows": 0,
+          "error": "HTTP 403"
+        },
+        {
+          "source": "pnj.com.vn",
+          "url": "https://www.pnj.com.vn/blog/gia-vang/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "phuquygroup.vn",
+          "url": "https://phuquygroup.vn/gia-vang",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "btmc.vn (Bảo Tín Minh Châu)",
+          "url": "https://btmc.vn/bang-gia-vang",
+          "rows": 0,
+          "error": "TimeoutException after 0:00:20.000000: Future not completed"
+        },
+        {
+          "source": "webgia.com",
+          "url": "https://webgia.com/gia-vang/",
+          "rows": 0,
+          "error": "Không bóc được dữ liệu"
+        },
+        {
+          "source": "vietnambiz.vn",
+          "url": "https://vietnambiz.vn/gia-vang.html",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    },
+    {
+      "id": "bac",
+      "name": "Bạc",
+      "ok": true,
+      "source": "giabac.net",
+      "rows": 1,
+      "lastGoodDay": "2026-11-14",
+      "error": null,
+      "attempts": [
+        {
+          "source": "phuquygroup.vn (Phú Quý)",
+          "url": "https://phuquygroup.vn/gia-bac",
+          "rows": 0,
+          "error": "HTTP 404"
+        },
+        {
+          "source": "giabac.net",
+          "url": "https://giabac.net/",
+          "rows": 1,
+          "error": null
+        }
+      ]
+    }
+  ]
+}
